@@ -1,0 +1,128 @@
+{
+  "projectType": "saas",
+  "projectName": "VertiSub CMS",
+  "projectDescription": "Enterprise WordPress CMS for managing services, courses, certifications, and multi-region content",
+  "theme": "linden",
+  "primaryColor": "#040404",
+  "lightColor": "#a2323b",
+  "darkColor": "#3b3c43",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/architecture",
+              "concepts/custom-post-types",
+              "concepts/template-system",
+              "concepts/acf-integration"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/services",
+              "features/courses",
+              "features/certifications",
+              "features/countries-regions",
+              "features/media-management",
+              "features/contact-forms"
+            ]
+          },
+          {
+            "group": "Customization",
+            "pages": [
+              "customization/theme-setup",
+              "customization/styling",
+              "customization/menus",
+              "customization/advanced-fields"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/content-management",
+              "guides/managing-services",
+              "guides/managing-courses",
+              "guides/managing-locations",
+              "guides/multimedia-content"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Developer Reference",
+        "groups": [
+          {
+            "group": "Theme Functions",
+            "pages": [
+              "api/custom-post-types",
+              "api/utilities",
+              "api/security",
+              "api/performance"
+            ]
+          },
+          {
+            "group": "Templates",
+            "pages": [
+              "api/page-templates",
+              "api/components",
+              "api/header-footer"
+            ]
+          },
+          {
+            "group": "Hooks & Filters",
+            "pages": [
+              "api/wordpress-hooks",
+              "api/custom-hooks"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Custom post types for services, courses, certifications, countries, clients, and documents",
+    "Advanced Custom Fields integration for flexible content management",
+    "Multi-region support with country-specific content and contact information",
+    "Interactive location map with amCharts integration",
+    "Multimedia management for images and videos",
+    "Multiple page templates for different content types",
+    "Custom meta boxes for enhanced content editing",
+    "AJAX-powered contact forms",
+    "Bootstrap 5 responsive design",
+    "Performance and security optimizations"
+  ],
+  "publicApiSurface": [
+    "vertisub_create_servicios_post_type()",
+    "vertisub_create_cursos_post_type()",
+    "vertisub_create_certification_post_type()",
+    "vertisub_create_clients_post_type()",
+    "vertisub_create_countries_post_type()",
+    "vertisub_create_documents_post_type()",
+    "vertisub_get_acf_field()",
+    "sancho_handle_contact_form()",
+    "sancho_theme_setup()",
+    "sancho_enqueue_assets()",
+    "vertisub_admin_assets()",
+    "Home Template",
+    "About Us Template",
+    "Services Template",
+    "Courses Template",
+    "Certifications Template",
+    "Works Template",
+    "News Template",
+    "Location Template",
+    "Policies Template"
+  ]
+}
