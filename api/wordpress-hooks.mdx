@@ -1,0 +1,427 @@
+---
+title: WordPress Hooks
+description: WordPress hooks used by the VertiSub theme to integrate with WordPress core functionality
+---
+
+The VertiSub theme hooks into various WordPress actions and filters to extend and customize functionality.
+
+## Theme Setup Hooks
+
+### after_setup_theme
+
+The theme uses `after_setup_theme` to initialize theme features and register menus.
+
+#### sancho_theme_setup
+
+Registers theme support for various WordPress features.
+
+**Location:** `inc/setup.php:34`
+
+```php
+function sancho_theme_setup() {
+    // Add theme support for various features
+    add_theme_support('title-tag');
+    add_theme_support('post-thumbnails');
+    add_theme_support('html5', array(
+        'search-form',
+        'comment-form',
+        'comment-list',
+        'gallery',
+        'caption',
+    ));
+
+    // Add theme support for custom logo
+    add_theme_support('custom-logo', array(
+        'header-text' => array('site-title'),
+    ));
+
+    // Add custom image sizes
+    add_image_size('hero-image', 1920, 1080, true);
+    add_image_size('service-thumb', 400, 300, true);
+}
+add_action('after_setup_theme', 'sancho_theme_setup');
+```
+
+#### vertisub_register_menus
+
+Registers navigation menus for the theme.
+
+**Location:** `inc/menu.php:167`
+
+```php
+function vertisub_register_menus() {
+    register_nav_menus(array(
+        'primary_menu' => __('Menú Principal', 'vertisub'),
+    ));
+
+    register_nav_menus(array(
+        'footer_menu' => __('Footer', 'vertisub'),
+        'footer_empresa'   => __('Footer Empresa', 'vertisub'),
+        'footer_legal'     => __('Footer Legal', 'vertisub'),
+    ));
+}
+add_action('after_setup_theme', 'vertisub_register_menus');
+```
+
+## Enqueue Hooks
+
+### wp_enqueue_scripts
+
+Enqueues frontend scripts and stylesheets.
+
+**Location:** `inc/enqueue.php:207`
+
+```php
+function sancho_enqueue_assets() {
+    // Enqueue Bootstrap CSS
+    wp_enqueue_style(
+        'bootstrap-css',
+        'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
+        array(),
+        '5.3.0'
+    );
+
+    // Enqueue theme stylesheet
+    wp_enqueue_style(
+        'sancho-style',
+        get_stylesheet_uri(),
+        array('bootstrap-css'),
+        wp_get_theme()->get('Version')
+    );
+
+    // Enqueue scripts
+    wp_enqueue_script(
+        'sancho-script',
+        get_template_directory_uri() . '/script.js',
+        array('jquery', 'bootstrap'),
+        filemtime(get_template_directory() . '/script.js'),
+        true
+    );
+
+    // Localize script for AJAX
+    wp_localize_script('sancho-script', 'sancho_ajax', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce'    => wp_create_nonce('sancho_nonce'),
+    ));
+}
+add_action('wp_enqueue_scripts', 'sancho_enqueue_assets');
+```
+
+### admin_enqueue_scripts
+
+Enqueues admin scripts and media uploader functionality.
+
+**Location:** `inc/enqueue.php:257`
+
+```php
+function vertisub_admin_assets($hook) {
+    if (!is_admin()) return;
+    $screen = get_current_screen();
+    if (!$screen || $screen->post_type !== 'nosotros') return;
+
+    wp_enqueue_media();
+    wp_register_script('vertisub-inline', false, array('jquery'), null, true);
+    wp_enqueue_script('vertisub-inline');
+}
+add_action('admin_enqueue_scripts', 'vertisub_admin_assets');
+```
+
+## Custom Post Type Hooks
+
+### init
+
+Used to register custom post types and custom rewrite rules.
+
+**Registered Post Types:**
+
+```php
+// Certifications
+add_action('init', 'vertisub_create_certification_post_type');
+
+// Clients
+add_action('init', 'vertisub_create_team_post_type');
+
+// Countries
+add_action('init', 'vertisub_create_paises_post_type');
+
+// Courses
+add_action('init', 'vertisub_create_cursos_post_type');
+
+// Documents
+add_action('init', 'vertisub_create_documentos_post_type');
+
+// Services
+add_action('init', 'vertisub_create_servicios_post_type');
+
+// Custom rewrite rules
+add_action('init', 'vertisub_rewrite_rules');
+
+// Performance optimizations
+add_action('init', 'sancho_optimize_performance');
+```
+
+**Example - Registering a Custom Post Type:**
+
+```php
+function vertisub_create_servicios_post_type() {
+    register_post_type(
+        'servicios',
+        array(
+            'labels' => array(
+                'name'               => 'Servicios',
+                'singular_name'      => 'Servicio',
+                'add_new'            => 'Añadir servicio',
+            ),
+            'public'      => true,
+            'has_archive' => false,
+            'menu_icon'   => 'dashicons-hammer',
+            'supports'    => array('title', 'thumbnail', 'editor'),
+            'rewrite'     => array('slug' => 'servicios'),
+        )
+    );
+}
+```
+
+## Meta Box Hooks
+
+### add_meta_boxes
+
+Registers custom meta boxes for post types.
+
+```php
+// Countries meta boxes
+add_action('add_meta_boxes', 'vertisub_add_paises_metaboxes');
+
+// Courses meta boxes
+add_action('add_meta_boxes', 'vertisub_cursos_metaboxes');
+
+// Documents meta boxes
+add_action('add_meta_boxes', 'vertisub_add_documentos_metaboxes');
+
+// Services meta boxes
+add_action('add_meta_boxes', 'vertisub_register_servicios_meta_boxes');
+add_action('add_meta_boxes', 'vertisub_add_multimedia_metabox');
+```
+
+**Example:**
+
+```php
+function vertisub_register_servicios_meta_boxes() {
+    add_meta_box(
+        'servicios_multimedia',
+        'Multimedia',
+        'vertisub_servicios_multimedia_callback',
+        'servicios',
+        'normal',
+        'default'
+    );
+}
+```
+
+## Save Post Hooks
+
+### save_post
+
+Saves custom meta data when posts are saved.
+
+```php
+// Countries
+add_action('save_post', 'vertisub_save_paises_meta');
+
+// Courses
+add_action('save_post', 'vertisub_save_cursos_metabox');
+
+// Documents
+add_action('save_post', 'vertisub_save_documentos_meta');
+
+// Services (generic)
+add_action('save_post', 'vertisub_save_multimedia_meta');
+
+// About Us extra data
+add_action('save_post', 'vertisub_save_about_extra');
+```
+
+### save_post_{post_type}
+
+Saves post type specific meta data.
+
+```php
+add_action('save_post_servicios', 'vertisub_save_servicios_meta');
+```
+
+**Example:**
+
+```php
+function vertisub_save_servicios_meta($post_id) {
+    if (array_key_exists('servicio_paises', $_POST)) {
+        update_post_meta($post_id, '_servicio_paises', $_POST['servicio_paises']);
+    }
+}
+```
+
+## AJAX Hooks
+
+### wp_ajax_{action}
+
+Handles AJAX requests for logged-in users.
+
+```php
+add_action('wp_ajax_sancho_contact', 'sancho_handle_contact_form');
+```
+
+### wp_ajax_nopriv_{action}
+
+Handles AJAX requests for non-logged-in users.
+
+```php
+add_action('wp_ajax_nopriv_sancho_contact', 'sancho_handle_contact_form');
+```
+
+**Example - Contact Form Handler:**
+
+```php
+function sancho_handle_contact_form() {
+    // Verify nonce
+    if (!wp_verify_nonce($_POST['nonce'], 'sancho_nonce')) {
+        wp_die('Security check failed');
+    }
+
+    // Sanitize form data
+    $name = sanitize_text_field($_POST['name']);
+    $email = sanitize_email($_POST['email']);
+    $message = sanitize_textarea_field($_POST['message']);
+
+    // Send email
+    $to = get_option('admin_email');
+    $subject = 'New Contact Form Submission';
+    $body = "Name: $name\nEmail: $email\nMessage: $message";
+
+    if (wp_mail($to, $subject, $body)) {
+        wp_send_json_success('Message sent successfully!');
+    } else {
+        wp_send_json_error('Failed to send message.');
+    }
+}
+```
+
+## Customizer Hooks
+
+### customize_register
+
+Registers customizer sections and controls.
+
+**Location:** `inc/customize.php:30`
+
+```php
+function vertisub_customize_register($wp_customize) {
+    $wp_customize->add_section('vertisub_footer_logo_section', array(
+        'title'       => __('Logo Footer', 'vertisub'),
+        'priority'    => 30,
+        'description' => 'Logo que se muestra en el footer',
+    ));
+
+    $wp_customize->add_setting('vertisub_footer_logo', array(
+        'default' => '',
+        'sanitize_callback' => 'esc_url_raw',
+    ));
+
+    $wp_customize->add_control(new WP_Customize_Image_Control($wp_customize, 'vertisub_footer_logo', array(
+        'label'    => __('Subir Logo Footer', 'vertisub'),
+        'section'  => 'vertisub_footer_logo_section',
+        'settings' => 'vertisub_footer_logo',
+    )));
+}
+add_action('customize_register', 'vertisub_customize_register');
+```
+
+## Security Hooks
+
+### send_headers
+
+Adds security headers to HTTP responses.
+
+**Location:** `inc/security.php:19`
+
+```php
+function vertisub_security_headers() {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-XSS-Protection: 1; mode=block');
+}
+add_action('send_headers', 'vertisub_security_headers');
+```
+
+## Filter Hooks
+
+### query_vars
+
+Adds custom query variables.
+
+**Location:** `inc/cpts/services.php:257`
+
+```php
+function vertisub_add_query_vars($vars) {
+    $vars[] = 'pais_slug';
+    return $vars;
+}
+add_filter('query_vars', 'vertisub_add_query_vars');
+```
+
+### nav_menu_link_attributes
+
+Modifies navigation menu link attributes.
+
+**Location:** `inc/menu.php:190`
+
+```php
+function vertisub_add_nav_link_class($atts, $item, $args) {
+    if ($args->theme_location === 'primary_menu') {
+        $atts['class'] = 'nav-link';
+    }
+
+    if ($args->theme_location === 'footer_menu' || 
+        $args->theme_location === 'footer_empresa' || 
+        $args->theme_location === 'footer_legal') {
+        $atts['class'] = 'footer-link';
+    }
+
+    return $atts;
+}
+add_filter('nav_menu_link_attributes', 'vertisub_add_nav_link_class', 10, 3);
+```
+
+### nav_menu_css_class
+
+Adds custom CSS classes to menu items.
+
+**Location:** `inc/menu.php:208`
+
+```php
+function vertisub_add_footer_li_class($classes, $item, $args) {
+    if ($args->theme_location === 'footer_menu' || 
+        $args->theme_location === 'footer_empresa' || 
+        $args->theme_location === 'footer_legal') {
+        $classes[] = 'footer-link-item';
+    }
+    return $classes;
+}
+add_filter('nav_menu_css_class', 'vertisub_add_footer_li_class', 10, 3);
+```
+
+## Performance Optimization
+
+The theme removes unnecessary WordPress features to improve performance:
+
+```php
+function sancho_optimize_performance() {
+    // Remove unnecessary WordPress features
+    remove_action('wp_head', 'wp_generator');
+    remove_action('wp_head', 'wlwmanifest_link');
+    remove_action('wp_head', 'rsd_link');
+
+    // Disable emojis
+    remove_action('wp_head', 'print_emoji_detection_script', 7);
+    remove_action('wp_print_styles', 'print_emoji_styles');
+}
+add_action('init', 'sancho_optimize_performance');
+```

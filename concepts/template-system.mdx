@@ -1,0 +1,576 @@
+---
+title: Template System
+description: Understanding WordPress template hierarchy and custom page templates in the VertiSub theme
+---
+
+## Overview
+
+The VertiSub theme implements a comprehensive template system that extends WordPress's template hierarchy with custom page templates for specific use cases. All custom templates are organized in the `templates/` directory.
+
+## Template Hierarchy
+
+### Default Templates
+
+These templates follow WordPress's standard template hierarchy:
+
+#### index.php
+
+The fallback template for all content types.
+
+```php
+// index.php:1-7
+<?php
+/*
+Template Name: Sancho Landing Page
+*/
+
+get_header();
+?>
+```
+
+**Used for:** Generic page rendering when no specific template matches.
+
+#### single.php
+
+Displays individual posts and custom post types.
+
+```php
+// single.php:12
+<?php $galery = vertisub_get_acf_field('galeria'); ?>
+```
+
+**Features:**
+- ACF gallery field support with Bootstrap carousel
+- Conditional layout based on gallery presence
+- Featured image fallback
+- Content rendering with `the_content()`
+
+**Gallery Implementation:**
+
+```php
+// single.php:21-45
+<?php if ($galery && is_array($galery)) : ?>
+    <div class="col-md-5 mt-5">
+        <div id="galeriaCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                <?php foreach ($galery as $index => $img) :
+                    $active = ($index === 0) ? 'active' : '';
+                    $url = is_array($img) ? $img['url'] : wp_get_attachment_url($img);
+                ?>
+                    <div class="carousel-item <?php echo esc_attr($active); ?>">
+                        <div class="cert-image"
+                            style="background-image: url('<?php echo esc_url($url); ?>'); height: 450px;">
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <!-- Carousel controls -->
+        </div>
+    </div>
+<?php endif; ?>
+```
+
+#### header.php
+
+Site header with navigation.
+
+```php
+// header.php (referenced in templates)
+get_header();
+```
+
+#### footer.php
+
+Site footer with scripts and widgets.
+
+```php
+// footer.php (referenced in templates)
+get_footer();
+```
+
+## Custom Page Templates
+
+All custom templates are located in `templates/` directory and use the WordPress Page Template system.
+
+### Home Template
+
+**File:** `templates/home-template.php`  
+**Template Name:** Home
+
+The homepage template with multiple dynamic sections.
+
+#### Template Declaration
+
+```php
+// templates/home-template.php:1-5
+<?php
+/*
+Template Name: Home
+*/
+?>
+```
+
+#### Key Features
+
+**1. Banner Carousel**
+
+```php
+// templates/home-template.php:148-185
+<?php $banners = vertisub_get_acf_field('banners'); ?>
+<?php if ($banners) : ?>
+    <div class="relative w-full h-[120vh] !mb-[-280px] overflow-hidden" id="bannerCarousel">
+        <?php foreach ($banners as $index => $banner) : ?>
+            <div class="absolute inset-0 <?= $index === 0 ? 'opacity-100' : 'opacity-0'; ?> slide">
+                <img src="<?= esc_url($banner['imagen']); ?>"
+                    alt="<?= esc_attr($banner['titulo']); ?>">
+                <div class="absolute inset-0 bg-black/40">
+                    <h2><?= esc_html($banner['titulo']); ?></h2>
+                    <p><?= esc_html($banner['descripcion']); ?></p>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+```
+
+**2. Solutions Section with Parallax**
+
+```php
+// templates/home-template.php:187-213
+<?php $soluciones_data = vertisub_get_acf_field('soluciones'); ?>
+<?php if ($soluciones_data) : ?>
+    <section id="short-description-section">
+        <div class="BlackUpperCircle">
+            <svg viewBox="0 0 1440 229">
+                <!-- SVG path -->
+            </svg>
+        </div>
+        <section id="short-description-container">
+            <div class="short-description__info">
+                <h2><?= $soluciones_data['titulo']; ?></h2>
+            </div>
+            <div class="short-description__image">
+                <img src="<?= $soluciones_url; ?>" alt="Descripción">
+            </div>
+        </section>
+    </section>
+<?php endif; ?>
+```
+
+**3. Projects/Works Section**
+
+```php
+// templates/home-template.php:216-258
+<?php
+$mostrar_proyectos = vertisub_get_acf_field('mostrar_proyectos');
+$proyectos_data = vertisub_get_acf_field('proyectos');
+?>
+<?php if ($proyectos_data && $mostrar_proyectos) : ?>
+    <section id="work-section">
+        <?php foreach ($proyects_data as $proyect) : ?>
+            <article class="work-item" 
+                data-title="<?= $proyect['titulo']; ?>"
+                data-country="<?= $proyect['pais']; ?>"
+                data-image="<?= $proyect['imagen']; ?>">
+                <!-- Project display -->
+            </article>
+        <?php endforeach; ?>
+    </section>
+<?php endif; ?>
+```
+
+**4. News Section**
+
+```php
+// templates/home-template.php:261-308
+<?php $news_data = vertisub_get_acf_field('novedades'); ?>
+<?php if ($news_data) : ?>
+    <section id="news-section">
+        <?php foreach ($all_news as $news) : ?>
+            <a href="<?= $news['url']; ?>" target="_blank">
+                <article class="card-news">
+                    <img src="<?= $news['imagen']; ?>">
+                    <h4><?= $news['titulo']; ?></h4>
+                    <h5><?= $news['fecha']; ?></h5>
+                </article>
+            </a>
+        <?php endforeach; ?>
+    </section>
+<?php endif; ?>
+```
+
+**5. Interactive Project Modal**
+
+```php
+// templates/home-template.php:310-345
+<div id="modal">
+    <div class="modal-container">
+        <div class="modal-flip">
+            <div id="modal-back">
+                <button id="closeModal">X</button>
+                <img src="" id="modal-image" />
+                <button id="prev-cert">❮</button>
+                <button id="next-cert">❯</button>
+                <div>
+                    <h2 id="modal-title"></h2>
+                    <p id="modal-country"></p>
+                    <p id="modal-description"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+**6. GSAP Scroll Animations**
+
+```php
+// templates/home-template.php:348-481
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    gsap.registerPlugin(ScrollTrigger);
+    
+    // Banner animation
+    gsap.to("#bannerCarousel", {
+        scrollTrigger: {
+            trigger: "#bannerCarousel",
+            start: "top top",
+            end: "bottom top",
+            scrub: 1,
+        }
+    });
+    
+    // Section animations with overlapping
+    gsap.fromTo("#short-description-section", {
+        y: 50,
+        opacity: 1
+    }, {
+        y: -200,
+        opacity: 1,
+        scrollTrigger: {
+            trigger: "#short-description-section",
+            start: "top 90%",
+            end: "top 20%",
+            scrub: 2.5,
+        }
+    });
+});
+</script>
+```
+
+### Services Page Template
+
+**File:** `templates/services-page.php`  
+**Template Name:** Servicios
+
+Dynamic service listing filtered by country slug from URL.
+
+#### URL-Based Country Filtering
+
+```php
+// templates/services-page.php:74-106
+$current_url = home_url(add_query_arg(NULL, NULL));
+$url_path = parse_url($current_url, PHP_URL_PATH);
+$segments = explode('/', trim($url_path, '/'));
+$pais_slug = strtolower(end($segments));
+
+// Get country ID from slug
+$pais_id = $wpdb->get_var($wpdb->prepare(
+    "SELECT post_id 
+    FROM $wpdb->postmeta 
+    WHERE meta_key = '_pais_slug' 
+      AND LOWER(meta_value) = %s 
+    LIMIT 1",
+    $pais_slug
+));
+
+if ($pais_id) {
+    $args = array(
+        'post_type'      => 'servicios',
+        'posts_per_page' => -1,
+        'meta_query'     => array(
+            array(
+                'key'     => '_servicio_paises',
+                'value'   => '"' . $pais_id . '"',
+                'compare' => 'LIKE'
+            )
+        )
+    );
+}
+```
+
+#### Service Card Display
+
+```php
+// templates/services-page.php:146-216
+<div class="service-card" data-service="<?php echo esc_attr($servicio_id); ?>">
+    <div class="service-image">
+        <?php if (has_post_thumbnail()) : ?>
+            <img src="<?php echo esc_url(get_the_post_thumbnail_url()); ?>">
+        <?php endif; ?>
+    </div>
+    
+    <div class="service-content">
+        <h3><?php echo esc_html($service_name); ?></h3>
+        <p><?php echo esc_html($descripcion_corta); ?></p>
+        
+        <div class="service-details">
+            <div class="service-expanded-text">
+                <?php echo $descripcion_full; ?>
+            </div>
+            
+            <!-- Multimedia gallery -->
+            <?php if (!empty($imagenes) || !empty($videos) || !empty($video_urls)) : ?>
+                <div class="service-media-grid">
+                    <?php foreach ($imagenes as $img): ?>
+                        <div class="service-media-item">
+                            <img src="<?php echo esc_url($img); ?>">
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+        
+        <button class="expand-btn">Ver Más Info</button>
+    </div>
+</div>
+```
+
+#### WhatsApp Integration
+
+```php
+// templates/services-page.php:200-210
+<?php if (!empty($whatsapp_number)) : ?>
+    <?php
+    $message = urlencode("Deseo conocer más información acerca del servicio $service_name");
+    $whatsapp_url = "https://wa.me/" . preg_replace('/\D/', '', $whatsapp_number) . "?text=$message";
+    ?>
+    <a href="<?php echo esc_url($whatsapp_url); ?>" target="_blank">
+        <i class="fab fa-whatsapp"></i> Contáctanos para conocer más
+    </a>
+<?php endif; ?>
+```
+
+#### Contact Information Display
+
+```php
+// templates/services-page.php:273-339
+if ($pais_id) {
+    $telefonos = get_post_meta($pais_id, '_telefonos', true) ?: [];
+    $correos = get_post_meta($pais_id, '_correos', true) ?: [];
+    $direccion = get_post_meta($pais_id, '_direccion', true);
+    ?>
+    
+    <!-- Phone card -->
+    <?php if (!empty($telefonos)) : ?>
+        <div class="contact-info-card">
+            <i class="fas fa-phone"></i>
+            <h4>Teléfono</h4>
+            <?php foreach ($telefonos as $tel) : ?>
+                <a href="tel:<?= esc_attr($tel) ?>"><?= esc_html($tel) ?></a>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+    
+    <!-- Email card -->
+    <?php if (!empty($correos)) : ?>
+        <div class="contact-info-card">
+            <i class="fas fa-envelope"></i>
+            <h4>Email</h4>
+            <?php foreach ($correos as $mail) : ?>
+                <a href="mailto:<?= esc_attr($mail) ?>"><?= esc_html($mail) ?></a>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+<?php } ?>
+```
+
+### Additional Page Templates
+
+The theme includes several other specialized templates:
+
+#### courses-page.php
+- Course catalog display
+- Instructor relationships
+- Enrollment links
+- Course modalities
+
+#### certifications-page.php
+- Certification showcase
+- Gallery displays
+
+#### about-us-page.php
+- Company information
+- Team members
+- Company history
+
+#### location-page.php
+- Interactive map with amCharts
+- Country office information
+- Contact details per location
+
+#### news-page.php
+- News listing
+- Post archives
+
+#### policies-vertisub.php
+- Policy content
+- Legal information
+
+#### privacity-page.php
+- Privacy policy
+- Data protection
+
+#### works-page.php
+- Project portfolio
+- Case studies
+
+## Template Parts
+
+Reusable template components:
+
+### components/floating-buttons.php
+
+Floating action buttons for social media and contact.
+
+```php
+<?php get_template_part('components/floating-buttons'); ?>
+```
+
+### loader.php
+
+Loading animation displayed while page loads.
+
+```php
+<?php get_template_part('loader'); ?>
+```
+
+## ACF Field Access in Templates
+
+All templates use the utility function for ACF field access:
+
+```php
+// Using the utility function
+$hero_data = vertisub_get_acf_field('hero');
+$banners = vertisub_get_acf_field('banners');
+$soluciones = vertisub_get_acf_field('soluciones');
+$contacto = vertisub_get_acf_field('contacto');
+
+// With option page
+$global_settings = vertisub_get_acf_field('settings', true);
+```
+
+## Best Practices
+
+### 1. Conditional Template Sections
+
+Always check if ACF data exists before rendering:
+
+```php
+<?php $hero_data = vertisub_get_acf_field('hero'); ?>
+<?php if ($hero_data) : ?>
+    <section class="hero">
+        <?php if ($hero_data['titulo']) : ?>
+            <h1><?= $hero_data['titulo']; ?></h1>
+        <?php endif; ?>
+    </section>
+<?php endif; ?>
+```
+
+### 2. Escape Output
+
+Always escape output for security:
+
+```php
+<h1><?= esc_html($title); ?></h1>
+<img src="<?= esc_url($image_url); ?>" alt="<?= esc_attr($alt_text); ?>">
+<a href="<?= esc_url($link); ?>"><?= esc_html($text); ?></a>
+```
+
+### 3. Use get_template_part()
+
+For reusable components:
+
+```php
+get_template_part('components/floating-buttons');
+get_template_part('loader');
+```
+
+### 4. Enqueue Template-Specific Assets
+
+Use conditional loading:
+
+```php
+// In inc/enqueue.php
+if (is_page_template('templates/home-template.php')) {
+    wp_enqueue_script('gsap');
+    wp_enqueue_script('scrolltrigger');
+}
+```
+
+### 5. Reset Post Data
+
+Always reset after custom queries:
+
+```php
+$custom_query = new WP_Query($args);
+if ($custom_query->have_posts()) :
+    while ($custom_query->have_posts()) : $custom_query->the_post();
+        // Display content
+    endwhile;
+    wp_reset_postdata(); // Important!
+endif;
+```
+
+## Template Selection
+
+To assign a template to a page:
+
+1. Edit page in WordPress admin
+2. Look for "Page Attributes" or "Template" metabox
+3. Select template from dropdown
+4. Publish/Update page
+
+## Creating New Templates
+
+### Step 1: Create Template File
+
+Create file in `templates/` directory:
+
+```php
+<?php
+/*
+Template Name: My Custom Template
+*/
+
+get_header();
+?>
+
+<main>
+    <!-- Your custom content -->
+</main>
+
+<?php
+get_footer();
+```
+
+### Step 2: Add ACF Fields
+
+Configure ACF field groups for your template.
+
+### Step 3: Enqueue Assets (if needed)
+
+Add conditional loading in `inc/enqueue.php`:
+
+```php
+if (is_page_template('templates/my-custom-template.php')) {
+    wp_enqueue_style('custom-template-css', VERTISUB_URL . '/assets/css/custom.css');
+    wp_enqueue_script('custom-template-js', VERTISUB_URL . '/assets/js/custom.js');
+}
+```
+
+## Related Documentation
+
+- [Theme Architecture](/concepts/architecture) - Overall theme structure
+- [Custom Post Types](/concepts/custom-post-types) - Using CPTs in templates
+- [ACF Integration](/concepts/acf-integration) - Advanced Custom Fields usage

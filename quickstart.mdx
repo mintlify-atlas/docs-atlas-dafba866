@@ -1,80 +1,633 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: "Quick Start Guide"
+description: "Get up and running with VertiSub CMS in minutes - from WordPress setup to creating your first service and course"
 ---
 
-## Get started in three steps
+## Getting Started
 
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+This guide walks you through setting up WordPress, installing VertiSub CMS, and creating your first content. By the end, you'll have a working site with services and courses.
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  This guide assumes you have a hosting environment ready. If not, consider using hosting providers like SiteGround, Bluehost, or WP Engine.
 </Note>
+
+## Step 1: Install WordPress
+
+If you don't have WordPress installed yet:
+
+<Steps>
+  <Step title="Download WordPress">
+    Visit [wordpress.org](https://wordpress.org/download/) and download the latest version.
+    
+    Or via command line:
+    ```bash
+    wp core download --locale=en_US
+    ```
+  </Step>
+  
+  <Step title="Create Database">
+    Create a MySQL database for your WordPress site:
+    
+    ```sql
+    CREATE DATABASE vertisub_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CREATE USER 'vertisub_user'@'localhost' IDENTIFIED BY 'strong_password';
+    GRANT ALL PRIVILEGES ON vertisub_db.* TO 'vertisub_user'@'localhost';
+    FLUSH PRIVILEGES;
+    ```
+  </Step>
+  
+  <Step title="Run Installation">
+    Access your domain in a browser and follow the WordPress installation wizard:
+    
+    1. Select language
+    2. Enter database details
+    3. Create admin account
+    4. Install WordPress
+    
+    Or via WP-CLI:
+    ```bash
+    wp core config --dbname=vertisub_db --dbuser=vertisub_user --dbpass=strong_password
+    wp core install --url=https://yoursite.com --title="Your Site" --admin_user=admin --admin_email=admin@example.com
+    ```
+  </Step>
+</Steps>
+
+## Step 2: Install VertiSub Theme
+
+<Steps>
+  <Step title="Install Theme Files">
+    Upload the theme via WordPress admin:
+    
+    1. Go to **Appearance → Themes → Add New**
+    2. Click **Upload Theme**
+    3. Choose `vertisubtheme.zip`
+    4. Click **Install Now**
+    5. Click **Activate**
+  </Step>
+  
+  <Step title="Install Required Plugin">
+    Install Advanced Custom Fields:
+    
+    1. Go to **Plugins → Add New**
+    2. Search "Advanced Custom Fields"
+    3. Click **Install Now** on ACF by Delicious Brains
+    4. Click **Activate**
+    
+    <Warning>
+      ACF is required for the theme to function properly. Don't skip this step!
+    </Warning>
+  </Step>
+  
+  <Step title="Configure Permalinks">
+    Set up pretty URLs:
+    
+    1. Go to **Settings → Permalinks**
+    2. Select **Post name**
+    3. Click **Save Changes**
+    
+    This flushes rewrite rules for custom post types.
+  </Step>
+</Steps>
+
+## Step 3: Basic Configuration
+
+<Steps>
+  <Step title="Set Up Navigation">
+    Create your main menu:
+    
+    1. Go to **Appearance → Menus**
+    2. Create a new menu called "Main Menu"
+    3. Add these pages:
+       - Home
+       - Services (Servicios)
+       - Courses (Cursos)
+       - About
+    4. Assign to **Primary Menu** location
+    5. Click **Save Menu**
+  </Step>
+  
+  <Step title="Upload Site Logo">
+    Add your branding:
+    
+    1. Go to **Appearance → Customize**
+    2. Navigate to **Site Identity**
+    3. Click **Select Logo**
+    4. Upload your logo (recommended: 300x100px PNG)
+    5. Click **Publish**
+  </Step>
+  
+  <Step title="Configure Site Settings">
+    Set basic information:
+    
+    1. Go to **Settings → General**
+    2. Set **Site Title**: Your Company Name
+    3. Set **Tagline**: Your company description
+    4. Set **Time Zone** to your location
+    5. Click **Save Changes**
+  </Step>
+</Steps>
+
+## Step 4: Create Your First Service
+
+Now let's create a service offering. The Services custom post type is perfect for showcasing your maritime services.
+
+<Steps>
+  <Step title="Access Services">
+    In WordPress admin, click **Servicios** in the sidebar.
+    
+    You'll see the services manager with a hammer icon (🔨).
+  </Step>
+  
+  <Step title="Add New Service">
+    Click **Añadir servicio** (Add New Service).
+    
+    The service post type supports:
+    ```php services.php:30
+    'supports' => array('title', 'thumbnail', 'editor')
+    ```
+    
+    Fill in:
+    - **Title**: "Underwater Welding Services"
+    - **Description**: Use the editor to describe your service
+    - **Featured Image**: Upload a service photo (400x300px recommended)
+  </Step>
+  
+  <Step title="Add Multimedia Content">
+    Scroll down to the **Multimedia** metabox:
+    
+    <CodeGroup>
+    ```php Image Gallery
+    // Add multiple images
+    1. Click "+ Agregar Imagen"
+    2. Click "Subir" to upload
+    3. Select image from media library
+    4. Add more images as needed
+    ```
+    
+    ```php Videos
+    // Add video files
+    1. Click "+ Agregar Video"
+    2. Upload MP4 or other video file
+    3. Or paste video URL
+    ```
+    
+    ```php Video URLs
+    // Add YouTube/Vimeo links
+    1. Click "+ Agregar Link"
+    2. Paste YouTube URL:
+       https://www.youtube.com/watch?v=xxxxx
+    3. Add multiple video links
+    ```
+    </CodeGroup>
+    
+    The multimedia metabox implementation:
+    ```php services.php:62
+    function vertisub_servicios_multimedia_callback($post) {
+        $imagenes    = get_post_meta($post->ID, '_imagenes_reseña', true);
+        $videos      = get_post_meta($post->ID, '_videos_reseña', true);
+        $video_urls  = get_post_meta($post->ID, '_video_urls_reseña', true);
+        // ... render fields
+    }
+    ```
+  </Step>
+  
+  <Step title="Associate with Countries">
+    Select countries where this service is available:
+    
+    In the **Países** metabox (sidebar), hold Ctrl/Cmd and select multiple countries:
+    - Mexico
+    - Panama
+    - Colombia
+    
+    ```php services.php:216
+    function vertisub_servicios_paises_callback($post) {
+        $paises = get_posts(array(
+            'post_type' => 'paises',
+            'posts_per_page' => -1,
+            'orderby' => 'title',
+            'order' => 'ASC'
+        ));
+        // ... render multi-select
+    }
+    ```
+  </Step>
+  
+  <Step title="Publish Service">
+    Click **Publish** to make your service live!
+    
+    Your service is now available at:
+    ```
+    https://yoursite.com/servicios/underwater-welding-services/
+    ```
+  </Step>
+</Steps>
+
+## Step 5: Create Your First Course
+
+Courses are more complex than services, with instructor relationships, curriculum, and testimonials.
+
+<Steps>
+  <Step title="Access Courses">
+    Click **Cursos** in the admin sidebar (trophy icon 🏆).
+  </Step>
+  
+  <Step title="Add New Course">
+    Click **Añadir Nuevo** and fill in basic information:
+    
+    - **Title**: "Commercial Diving Certification Level 1"
+    - **Description**: Full course overview in the editor
+    - **Featured Image**: Course thumbnail (recommended dimensions for thumbnails)
+  </Step>
+  
+  <Step title="Add Course Images">
+    In the **Detalles del Curso** metabox:
+    
+    ```php courses.php:79
+    <h3>Imágenes del Curso</h3>
+    <div id="imagenes-wrapper">
+        // Image uploader with preview
+    </div>
+    <button class="add-image">+ Añadir Imagen</button>
+    ```
+    
+    1. Click **+ Añadir Imagen**
+    2. Upload training photos
+    3. Add 3-5 images showcasing the course
+  </Step>
+  
+  <Step title="Configure Modalities">
+    Add course delivery methods:
+    
+    ```php courses.php:95
+    <h3>Modalidades</h3>
+    // Dynamic field for modalities
+    ```
+    
+    Add modalities like:
+    - "Online Learning"
+    - "In-Person Training"
+    - "Hybrid Format"
+    
+    Click **+ Añadir Modalidad** for each one.
+  </Step>
+  
+  <Step title="Add Introduction Video">
+    Paste a YouTube or Vimeo URL:
+    
+    ```
+    https://www.youtube.com/watch?v=your-intro-video
+    ```
+    
+    This video will be featured prominently on the course page.
+  </Step>
+  
+  <Step title="Add Testimonials">
+    Add video testimonials from past students:
+    
+    ```php courses.php:112
+    <h3>Videos de Testimonios</h3>
+    // Multiple video URL fields
+    ```
+    
+    1. Click **+ Añadir Testimonio**
+    2. Paste testimonial video URL
+    3. Add 2-3 testimonials
+  </Step>
+  
+  <Step title="Build Course Curriculum">
+    Add course topics/modules:
+    
+    ```php courses.php:125
+    <h3>Temario</h3>
+    // Dynamic curriculum builder
+    ```
+    
+    Example curriculum:
+    - "Introduction to Commercial Diving"
+    - "Safety Protocols and Equipment"
+    - "Underwater Welding Techniques"
+    - "Certification Exam Preparation"
+    
+    Click **+ Añadir Tema** for each module.
+  </Step>
+  
+  <Step title="Set Course URLs">
+    Add important links:
+    
+    ```php courses.php:177
+    <h3>Enlaces</h3>
+    - URL Inscripción: Registration page
+    - URL Más Información: Details page
+    - URL Plataforma de Aprendizaje: LMS link
+    - URL Página Oficial: Official course page
+    ```
+    
+    Example:
+    ```
+    URL Inscripción: https://yoursite.com/register/diving-level-1
+    URL Plataforma: https://learn.yoursite.com
+    ```
+  </Step>
+  
+  <Step title="Associate with Countries">
+    Select countries where the course is offered:
+    
+    ```php courses.php:147
+    <h3>Convenios con Países</h3>
+    // Checkboxes with contact URL for each country
+    ```
+    
+    For each country:
+    1. Check the checkbox
+    2. Add contact URL: `https://yoursite.com/contact/mexico`
+  </Step>
+  
+  <Step title="Add Custom Agreements">
+    If you have special partnerships:
+    
+    ```php courses.php:163
+    <h3>Convenios Personalizados</h3>
+    ```
+    
+    Example:
+    - Title: "Partnership with Marine Institute"
+    - URL: `https://marineinstitute.com/partnership`
+  </Step>
+  
+  <Step title="Publish Course">
+    Click **Publish** to make your course live!
+    
+    Access it at:
+    ```
+    https://yoursite.com/cursos/commercial-diving-certification-level-1/
+    ```
+  </Step>
+</Steps>
+
+## Step 6: Add Supporting Content
+
+### Create Countries
+
+Before services and courses can be associated with locations, add countries:
+
+<Steps>
+  <Step title="Add Country">
+    1. Go to **Países** in admin menu
+    2. Click **Añadir Nuevo**
+    3. Add: "Mexico", "Panama", "Colombia", etc.
+    4. Fill in contact details (phone, email, address)
+    5. Publish
+  </Step>
+</Steps>
+
+### Add Certifications
+
+Showcase your professional certifications:
+
+```php certification.php:10
+register_post_type('certificaciones', array(
+    'labels' => array(
+        'name' => 'Certificaciones',
+        'singular_name' => 'Certificación',
+    ),
+    'public' => true,
+    'menu_icon' => 'dashicons-awards',
+    'supports' => array('title', 'editor', 'thumbnail'),
+));
+```
+
+<Steps>
+  <Step title="Add Certification">
+    1. Go to **Certificaciones**
+    2. Add title: "ISO 9001:2015 Certified"
+    3. Add description in editor
+    4. Upload certification logo as featured image
+    5. Publish
+  </Step>
+</Steps>
+
+## Step 7: Customize Appearance
+
+### Understanding the Design System
+
+The theme uses CSS variables for consistent theming:
+
+```css style.css:18
+:root {
+  --primary-color: #0f1319;      /* Dark blue-black */
+  --secondary-color: #e3c5ca;    /* Soft pink */
+  --accent-color: #bb0c2b;       /* Bold red */
+  --accent-secondary: #bb1447;   /* Deep red */
+  --text-dark: #544949;          /* Dark gray */
+  --text-light: #ffffff;         /* White */
+  --transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+```
+
+### Navigation Styles
+
+The theme includes a modern navigation system:
+
+```css style.css:256
+.navbar-modern {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 1.5rem 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+```
+
+Features:
+- Fixed header with blur effect
+- Responsive hamburger menu
+- Dropdown support
+- Smooth animations with AOS library
+
+## Step 8: Test Your Site
+
+<Steps>
+  <Step title="View Frontend">
+    Visit your site homepage:
+    ```
+    https://yoursite.com
+    ```
+    
+    Check that:
+    - Logo displays correctly
+    - Menu works with dropdowns
+    - Mobile hamburger menu functions
+  </Step>
+  
+  <Step title="Test Service Page">
+    Navigate to your service:
+    ```
+    https://yoursite.com/servicios/underwater-welding-services/
+    ```
+    
+    Verify:
+    - Images display in gallery
+    - Videos play correctly
+    - Country associations show
+  </Step>
+  
+  <Step title="Test Course Page">
+    Visit your course:
+    ```
+    https://yoursite.com/cursos/commercial-diving-certification-level-1/
+    ```
+    
+    Confirm:
+    - Introduction video plays
+    - Curriculum displays properly
+    - Registration links work
+    - Testimonials are visible
+  </Step>
+  
+  <Step title="Mobile Testing">
+    Test on mobile devices:
+    - Responsive layouts work
+    - Touch navigation functions
+    - Images load properly
+    - Videos are responsive
+  </Step>
+</Steps>
+
+## Common Tasks
+
+### Adding More Services
+
+```php
+// Services are stored with these meta fields:
+_imagenes_reseña      // Array of image URLs
+_videos_reseña        // Array of video file URLs  
+_video_urls_reseña    // Array of video embed URLs
+_servicio_paises      // Array of country post IDs
+```
+
+Repeat Step 4 for each service you want to add.
+
+### Adding More Courses
+
+```php
+// Course meta fields:
+_curso_imagenes       // Array of attachment IDs
+_curso_modalidades    // Array of strings
+_curso_intro_video    // Video URL string
+_curso_testimonios    // Array of video URLs
+_curso_temario        // Array of curriculum items
+_curso_url_inscribir  // Registration URL
+_curso_paises         // Array of country IDs
+_curso_convenios      // Array of agreement objects
+```
+
+Repeat Step 5 for additional courses.
+
+### Querying Custom Post Types
+
+To display services in templates:
+
+```php
+$services = new WP_Query(array(
+    'post_type' => 'servicios',
+    'posts_per_page' => 10,
+    'orderby' => 'date',
+    'order' => 'DESC'
+));
+
+if ($services->have_posts()) :
+    while ($services->have_posts()) : $services->the_post();
+        // Display service
+        the_title();
+        the_content();
+        
+        // Get multimedia
+        $images = get_post_meta(get_the_ID(), '_imagenes_reseña', true);
+        $videos = get_post_meta(get_the_ID(), '_video_urls_reseña', true);
+    endwhile;
+    wp_reset_postdata();
+endif;
+```
+
+## Performance Tips
+
+<Note>
+  The theme is already optimized, but here are additional tips:
+</Note>
+
+1. **Image Optimization**: Use WebP format and compress images
+2. **Caching**: Install WP Rocket or similar caching plugin
+3. **CDN**: Use Cloudflare for static assets
+4. **Lazy Loading**: Images lazy load by default in WordPress 5.5+
+5. **Database**: Optimize database regularly with WP-Optimize
+
+## Next Steps
+
+You now have a working VertiSub CMS site! Continue with:
+
+<CardGroup cols={3}>
+  <Card title="Custom Post Types" icon="database" href="/api/custom-post-types">
+    Deep dive into all post types
+  </Card>
+  
+  <Card title="Template System" icon="code" href="/api/page-templates">
+    Learn about page templates
+  </Card>
+  
+  <Card title="Customization" icon="palette" href="/customization/theme-setup">
+    Customize colors and styles
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+### Services/Courses Not Showing
+
+Flush permalinks:
+```bash
+wp rewrite flush
+```
+
+Or visit: **Settings → Permalinks** and click Save.
+
+### Multimedia Not Saving
+
+Check file upload limits:
+```php wp-config.php
+@ini_set('upload_max_size', '64M');
+@ini_set('post_max_size', '64M');
+@ini_set('max_execution_time', '300');
+```
+
+### Styles Not Loading
+
+Clear cache and check:
+```php functions.php:12
+require_once VERTISUB_DIR . '/inc/enqueue.php';
+```
+
+Verify this line exists in `functions.php`.
+
+## Getting Help
+
+If you need assistance:
+
+- Check WordPress error log: `/wp-content/debug.log`
+- Enable debug mode to see errors
+- Contact Vertisub support with:
+  - WordPress version
+  - PHP version
+  - Error messages
+  - Screenshots
+
+<Warning>
+  Always backup your database before making major changes!
+</Warning>
+
+---
+
+Congratulations! You've successfully set up VertiSub CMS and created your first content. 🎉

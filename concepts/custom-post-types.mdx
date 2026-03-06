@@ -1,0 +1,463 @@
+---
+title: Custom Post Types
+description: Complete guide to VertiSub's custom post types including services, courses, certifications, countries, clients, and documents
+---
+
+## Overview
+
+The VertiSub theme implements six custom post types to manage different content types beyond WordPress's standard posts and pages. Each CPT is registered in its own file within `inc/cpts/` for modularity.
+
+## Services (servicios)
+
+**File:** `inc/cpts/services.php`
+
+Manages company services with multimedia support and country relationships.
+
+### Registration
+
+```php
+// inc/cpts/services.php:10-36
+function vertisub_create_servicios_post_type()
+{
+    register_post_type('servicios', array(
+        'labels' => array(
+            'name'               => 'Servicios',
+            'singular_name'      => 'Servicio',
+            'add_new'            => 'Añadir servicio',
+            'add_new_item'       => 'Añadir servicio',
+            'edit_item'          => 'Editar servicio',
+            // ... more labels
+        ),
+        'public'      => true,
+        'has_archive' => false,
+        'menu_icon'   => 'dashicons-hammer',
+        'supports'    => array('title', 'thumbnail', 'editor'),
+        'rewrite'     => array('slug' => 'servicios'),
+    ));
+}
+add_action('init', 'vertisub_create_servicios_post_type');
+```
+
+### Features
+
+- **Supports:** Title, featured image, editor (description)
+- **Slug:** `/servicios/`
+- **Archive:** Disabled
+- **Menu Icon:** Hammer (dashicons-hammer)
+
+### Custom Meta Boxes
+
+#### Multimedia Meta Box
+
+```php
+// inc/cpts/services.php:39-58
+function vertisub_register_servicios_meta_boxes()
+{
+    add_meta_box(
+        'servicios_multimedia',
+        'Multimedia',
+        'vertisub_servicios_multimedia_callback',
+        'servicios',
+        'normal',
+        'default'
+    );
+    
+    add_meta_box(
+        'servicios_paises',
+        'Países',
+        'vertisub_servicios_paises_callback',
+        'servicios',
+        'side',
+        'default'
+    );
+}
+```
+
+**Multimedia Fields:**
+- `_imagenes_reseña` - Array of image URLs
+- `_videos_reseña` - Array of video file URLs
+- `_video_urls_reseña` - Array of YouTube/Vimeo URLs
+
+**Country Relationship:**
+- `_servicio_paises` - Array of related country post IDs
+
+### Custom Rewrite Rules
+
+```php
+// inc/cpts/services.php:259-267
+function vertisub_rewrite_rules()
+{
+    add_rewrite_rule(
+        '^servicios-vertisub/([^/]+)/?$',
+        'index.php?pagename=servicios-vertisub&pais_slug=$matches[1]',
+        'top'
+    );
+}
+add_action('init', 'vertisub_rewrite_rules');
+```
+
+Allows filtering services by country: `/servicios-vertisub/esp/`
+
+## Courses (cursos)
+
+**File:** `inc/cpts/courses.php`
+
+Manages educational courses with extensive metadata including instructors, modalities, and country-specific pricing.
+
+### Registration
+
+```php
+// inc/cpts/courses.php:11-36
+function vertisub_create_cursos_post_type()
+{
+    register_post_type('cursos', array(
+        'labels' => array(
+            'name'               => 'Cursos',
+            'singular_name'      => 'Curso',
+            // ... more labels
+        ),
+        'public'      => true,
+        'has_archive' => false,
+        'menu_icon'   => 'dashicons-awards',
+        'supports'    => array('title', 'editor', 'thumbnail'),
+        'rewrite'     => array('slug' => 'cursos'),
+    ));
+}
+add_action('init', 'vertisub_create_cursos_post_type');
+```
+
+### Course Meta Fields
+
+```php
+// inc/cpts/courses.php:60-72
+$imagenes      = get_post_meta($post->ID, '_curso_imagenes', true) ?: [];
+$modalidades   = get_post_meta($post->ID, '_curso_modalidades', true) ?: [];
+$intro_video   = get_post_meta($post->ID, '_curso_intro_video', true);
+$testimonios   = get_post_meta($post->ID, '_curso_testimonios', true) ?: [];
+$temario       = get_post_meta($post->ID, '_curso_temario', true) ?: [];
+$url_inscribir = get_post_meta($post->ID, '_curso_url_inscribir', true);
+$url_info      = get_post_meta($post->ID, '_curso_url_info', true);
+$url_plataforma = get_post_meta($post->ID, '_curso_url_plataforma', true);
+$url_oficial   = get_post_meta($post->ID, '_curso_url_oficial', true);
+$paises        = get_post_meta($post->ID, '_curso_paises', true) ?: [];
+$paises_urls   = get_post_meta($post->ID, '_curso_paises_urls', true) ?: [];
+$instructores  = get_post_meta($post->ID, '_curso_instructores', true) ?: [];
+$convenios     = get_post_meta($post->ID, '_curso_convenios', true) ?: [];
+```
+
+### Meta Fields Explained
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `_curso_imagenes` | Array (int) | Course image attachment IDs |
+| `_curso_modalidades` | Array (string) | Course modalities (online, presencial, etc.) |
+| `_curso_intro_video` | String (URL) | Introduction video URL |
+| `_curso_testimonios` | Array (URL) | Testimonial video URLs |
+| `_curso_temario` | Array (string) | Course syllabus topics |
+| `_curso_url_inscribir` | String (URL) | Enrollment URL |
+| `_curso_url_info` | String (URL) | More information URL |
+| `_curso_url_plataforma` | String (URL) | Learning platform URL |
+| `_curso_url_oficial` | String (URL) | Official page URL |
+| `_curso_paises` | Array (int) | Related country IDs |
+| `_curso_paises_urls` | Array (URL) | Contact URLs per country |
+| `_curso_instructores` | Array (int) | Related instructor IDs |
+| `_curso_convenios` | Array (object) | Custom agreements with title and URL |
+
+### Convenios (Agreements) Structure
+
+```php
+// inc/cpts/courses.php:266-280
+if (isset($_POST['curso_convenios'])) {
+    $convenios = [];
+    $titulos = $_POST['curso_convenios']['titulo'];
+    $urls    = $_POST['curso_convenios']['url'];
+    foreach ($titulos as $i => $titulo) {
+        if (!empty($titulo) || !empty($urls[$i])) {
+            $convenios[] = [
+                'titulo' => sanitize_text_field($titulo),
+                'url'    => esc_url_raw($urls[$i])
+            ];
+        }
+    }
+    update_post_meta($post_id, '_curso_convenios', $convenios);
+}
+```
+
+## Certifications (certificaciones)
+
+**File:** `inc/cpts/certification.php`
+
+Simple CPT for managing certifications and awards.
+
+### Registration
+
+```php
+// inc/cpts/certification.php:8-33
+function vertisub_create_certification_post_type()
+{
+    register_post_type('certificaciones', array(
+        'labels' => array(
+            'name'               => 'Certificaciones',
+            'singular_name'      => 'Certificación',
+            // ... more labels
+        ),
+        'public'      => true,
+        'has_archive' => true,
+        'menu_icon'   => 'dashicons-awards',
+        'supports'    => array('title', 'editor', 'thumbnail'),
+        'rewrite'     => array('slug' => 'certificaciones'),
+    ));
+}
+add_action('init', 'vertisub_create_certification_post_type');
+```
+
+### Features
+
+- **Supports:** Title, editor, featured image
+- **Slug:** `/certificaciones/`
+- **Archive:** Enabled
+- **No custom meta boxes** - Uses standard WordPress fields and ACF
+
+## Countries (paises)
+
+**File:** `inc/cpts/countries.php`
+
+Manages country/office information with contact details.
+
+### Registration
+
+```php
+// inc/cpts/countries.php:10-35
+function vertisub_create_paises_post_type()
+{
+    register_post_type('paises', array(
+        'labels' => array(
+            'name'               => 'Países',
+            'singular_name'      => 'País',
+            // ... more labels
+        ),
+        'public'      => true,
+        'has_archive' => false,
+        'menu_icon'   => 'dashicons-location-alt',
+        'supports'    => array('title', 'editor'),
+        'rewrite'     => array('slug' => 'paises'),
+    ));
+}
+add_action('init', 'vertisub_create_paises_post_type');
+```
+
+### Country Meta Fields
+
+```php
+// inc/cpts/countries.php:53-68
+$contacto  = get_post_meta($post->ID, '_contacto', true);
+$direccion = get_post_meta($post->ID, '_direccion', true);
+$correos   = get_post_meta($post->ID, '_correos', true) ?: [];
+$telefonos = get_post_meta($post->ID, '_telefonos', true) ?: [];
+$whatsapps = get_post_meta($post->ID, '_whatsapps', true) ?: [];
+$slug      = get_post_meta($post->ID, '_pais_slug', true);
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `_pais_slug` | String | Country code (ESP, COL, MEX, etc.) |
+| `_contacto` | String | Contact person name |
+| `_direccion` | Text | Office address |
+| `_correos` | Array | Email addresses |
+| `_telefonos` | Array | Phone numbers |
+| `_whatsapps` | Array | WhatsApp numbers |
+
+### Usage in Location Map
+
+```php
+// inc/enqueue.php:146-158
+$slug      = strtolower(get_post_meta(get_the_ID(), '_pais_slug', true));
+$flag_url = "https://flagcdn.com/w80/{$slug}.png";
+
+$data[$slug] = array(
+    'name'   => get_the_title(),
+    'flag'   => $flag_url,
+    'type'   => 'Oficina Regional',
+    'status' => 'regional',
+    'contacts' => array(/* ... */)
+);
+```
+
+## Clients (clientes)
+
+**File:** `inc/cpts/clients.php`
+
+Manages client/company logos and information.
+
+### Registration
+
+```php
+// inc/cpts/clients.php:12-37
+function vertisub_create_team_post_type()
+{
+    register_post_type('clientes', array(
+        'labels' => array(
+            'name'               => 'Clientes',
+            'singular_name'      => 'Cliente',
+            // ... more labels
+        ),
+        'public'      => true,
+        'has_archive' => false,
+        'menu_icon'   => 'dashicons-businessperson',
+        'supports'    => array('title', 'editor', 'thumbnail'),
+        'rewrite'     => array('slug' => 'clientes'),
+    ));
+}
+add_action('init', 'vertisub_create_team_post_type');
+```
+
+### Features
+
+- **Supports:** Title, editor (description), featured image (logo)
+- **Slug:** `/clientes/`
+- **Archive:** Disabled
+- Simple structure for client showcase
+
+## Documents (documentos_pais)
+
+**File:** `inc/cpts/documents.php`
+
+Manages country-specific documents and files.
+
+### Registration
+
+```php
+// inc/cpts/documents.php:8-30
+function vertisub_create_documentos_post_type()
+{
+    register_post_type('documentos_pais', array(
+        'labels' => array(
+            'name'               => 'Documentos por País',
+            'singular_name'      => 'Documento por País',
+            // ... more labels
+        ),
+        'public'      => true,
+        'has_archive' => false,
+        'menu_icon'   => 'dashicons-media-document',
+        'supports'    => array('title', 'editor'),
+        'rewrite'     => array('slug' => 'documentos-pais'),
+    ));
+}
+add_action('init', 'vertisub_create_documentos_post_type');
+```
+
+### Document Meta Fields
+
+```php
+// inc/cpts/documents.php:52-56
+$selected_pais = get_post_meta($post->ID, '_pais_relacionado', true);
+$documentos = get_post_meta($post->ID, '_documentos', true) ?: [];
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `_pais_relacionado` | Integer | Related country post ID |
+| `_documentos` | Array | Array of document objects |
+
+### Document Object Structure
+
+```php
+// inc/cpts/documents.php:185-192
+$documentos[] = [
+    'nombre'  => sanitize_text_field($nombres[$i]),
+    'archivo' => esc_url_raw($archivos[$i])
+];
+```
+
+Each document contains:
+- `nombre` - Document display name
+- `archivo` - File URL from media library
+
+## Querying Custom Post Types
+
+### Basic Query
+
+```php
+$args = array(
+    'post_type'      => 'servicios',
+    'posts_per_page' => -1,
+    'orderby'        => 'date',
+    'order'          => 'DESC'
+);
+
+$servicios = new WP_Query($args);
+
+if ($servicios->have_posts()) :
+    while ($servicios->have_posts()) : $servicios->the_post();
+        // Display service
+    endwhile;
+    wp_reset_postdata();
+endif;
+```
+
+### Filtering by Meta Query
+
+```php
+// inc/cpts/services.php:112-125 (from services-page.php)
+$args = array(
+    'post_type'      => 'servicios',
+    'posts_per_page' => -1,
+    'meta_query'     => array(
+        array(
+            'key'     => '_servicio_paises',
+            'value'   => '"' . $pais_id . '"',
+            'compare' => 'LIKE'
+        )
+    )
+);
+```
+
+### Retrieving Meta Data
+
+```php
+// Get single meta value
+$intro_video = get_post_meta($post_id, '_curso_intro_video', true);
+
+// Get array meta value
+$imagenes = get_post_meta($post_id, '_curso_imagenes', true) ?: [];
+
+// Get all meta for a post
+$all_meta = get_post_meta($post_id);
+```
+
+## Best Practices
+
+### 1. Always Initialize Arrays
+
+```php
+$correos = get_post_meta($post->ID, '_correos', true);
+$correos = is_array($correos) ? $correos : [];
+```
+
+### 2. Sanitize on Save
+
+```php
+update_post_meta($post_id, '_contacto', sanitize_text_field($_POST['contacto']));
+update_post_meta($post_id, '_correos', array_map('sanitize_email', $_POST['correos']));
+```
+
+### 3. Use Nonce Verification
+
+```php
+if (!isset($_POST['documentos_meta_nonce']) || 
+    !wp_verify_nonce($_POST['documentos_meta_nonce'], 'documentos_save_meta')) {
+    return;
+}
+```
+
+### 4. Prevent Autosave
+
+```php
+if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+```
+
+## Related Documentation
+
+- [Theme Architecture](/concepts/architecture) - Overall theme structure
+- [Template System](/concepts/template-system) - Using CPTs in templates
+- [ACF Integration](/concepts/acf-integration) - Extending with ACF fields

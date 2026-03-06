@@ -1,0 +1,634 @@
+---
+title: Multimedia Content Management
+description: Comprehensive guide to adding images, videos, and multimedia content
+---
+
+This guide covers all aspects of managing multimedia content in VertiSub CMS, including images, video files, and embedded video links from YouTube and Vimeo.
+
+## Overview
+
+VertiSub CMS supports rich multimedia content across different sections:
+
+- **Images**: Uploaded images displayed in galleries and content
+- **Video Files**: Uploaded video files hosted on your server
+- **Video Links**: Embedded videos from YouTube and Vimeo
+- **Featured Images**: Primary images for services, courses, and other content
+
+## WordPress Media Library
+
+All media files are managed through the WordPress Media Library.
+
+### Accessing the Media Library
+
+<Steps>
+
+### Navigate to Media
+
+In the WordPress admin dashboard, click **Media** in the left sidebar, then **Library**.
+
+### View All Media
+
+You'll see all uploaded images, videos, documents, and other files.
+
+### Filter Media
+
+Use the filters at the top to view:
+- Images only
+- Audio files
+- Video files
+- Documents
+- All media items
+
+### Search Media
+
+Use the search box to find specific files by name.
+
+</Steps>
+
+### Uploading Media Directly
+
+<Steps>
+
+### Click Add New
+
+In the Media section, click **Add New**.
+
+### Select Files
+
+Drag and drop files onto the upload area, or click **"Select Files"** to browse your computer.
+
+### Wait for Upload
+
+Files will upload automatically. You'll see a progress bar.
+
+### Edit Details (Optional)
+
+After upload, click on a file to add:
+- Title
+- Caption
+- Alt text (important for accessibility)
+- Description
+
+</Steps>
+
+## Managing Images
+
+### Image Types in VertiSub CMS
+
+#### Featured Images
+
+The primary image representing a service, course, or content item.
+
+**Used in:**
+- Services (Servicios)
+- Courses (Cursos)
+
+**Recommended specs:**
+- Dimensions: 1200 x 675 pixels (16:9 ratio)
+- Format: JPG or PNG
+- File size: Under 500KB
+
+#### Gallery Images
+
+Multiple images showcasing different aspects of services or courses.
+
+**Used in:**
+- Service multimedia sections
+- Course image galleries
+
+**Recommended specs:**
+- Dimensions: 1200 x 800 pixels (or similar)
+- Format: JPG or PNG
+- File size: Under 500KB each
+
+### Adding Images to Services
+
+<Steps>
+
+### Open Service Editor
+
+Navigate to **Servicios** and edit or create a service.
+
+### Scroll to Multimedia
+
+Find the **Multimedia** meta box below the main editor.
+
+### Add Image Field
+
+Under **"📷 Imágenes"**, click **"+ Agregar Imagen"**.
+
+### Upload Image
+
+Click the **"Subir"** button next to the new field.
+
+### Select from Media Library
+
+The WordPress Media Library opens in a modal window.
+
+### Upload or Choose
+
+**To upload new:**
+1. Click **"Subir archivos"** tab
+2. Drag and drop or click to browse
+3. Wait for upload to complete
+
+**To choose existing:**
+1. Click **"Biblioteca multimedia"** tab
+2. Click on the image you want
+
+### Confirm Selection
+
+Click **"Usar esta imagen"** at the bottom right.
+
+### Verify URL
+
+The image URL will automatically populate in the text field.
+
+### Add More Images
+
+Repeat for additional images.
+
+</Steps>
+
+### Adding Images to Courses
+
+<Steps>
+
+### Open Course Editor
+
+Navigate to **Cursos** and edit or create a course.
+
+### Find Course Images Section
+
+Locate **"Imágenes del Curso"** in the Detalles del Curso meta box.
+
+### Add Image
+
+Click **"+ Añadir Imagen"**.
+
+### Select Image
+
+The Media Library opens automatically. Upload new or select existing images.
+
+### Confirm
+
+Click **"Usar Imagen"**.
+
+### View Thumbnail
+
+The image thumbnail appears with a hidden ID field and **"Eliminar"** button.
+
+### Add More Images
+
+Repeat to build an image gallery.
+
+</Steps>
+
+### Image Best Practices
+
+#### Before Upload
+
+- **Resize Images**: Use image editing software to resize before uploading
+- **Optimize File Size**: Compress images using tools like TinyPNG or JPEGmini
+- **Descriptive Filenames**: Name files descriptively (e.g., `wreck-diving-course-equipment.jpg`)
+- **Remove Spaces**: Use hyphens instead of spaces in filenames
+
+#### During Upload
+
+- **Add Alt Text**: Describe the image for accessibility and SEO
+- **Add Captions**: Provide context where appropriate
+- **Use Titles**: Keep titles clear and relevant
+
+#### After Upload
+
+- **Test Display**: Preview content to ensure images display correctly
+- **Check Mobile**: Verify images look good on mobile devices
+- **Monitor Load Times**: If pages load slowly, optimize images further
+
+### Recommended Image Dimensions
+
+| Use Case | Dimensions | Ratio | Format |
+|----------|------------|-------|--------|
+| Featured Images | 1200 x 675 px | 16:9 | JPG |
+| Gallery Images | 1200 x 800 px | 3:2 | JPG |
+| Portrait Images | 800 x 1200 px | 2:3 | JPG |
+| Thumbnails | Auto-generated | - | JPG |
+| Logos/Icons | Original size | - | PNG |
+
+## Managing Videos
+
+### Video File Types
+
+VertiSub CMS supports two video methods:
+
+1. **Uploaded Video Files**: Files hosted on your server
+2. **Video Links**: Embedded videos from YouTube or Vimeo
+
+<Note>
+**Recommendation**: Use YouTube or Vimeo links instead of uploaded files for better performance, reliability, and bandwidth management.
+</Note>
+
+### Adding Uploaded Video Files
+
+<Steps>
+
+### Open Content Editor
+
+Edit a service that should have video content.
+
+### Scroll to Multimedia
+
+Find the **Multimedia** meta box.
+
+### Add Video Field
+
+Under **"🎥 Videos (archivos)"**, click **"+ Agregar Video"**.
+
+### Upload Video
+
+Click the **"Subir"** button next to the new field.
+
+### Select Video File
+
+In the Media Library:
+1. Click **"Subir archivos"**
+2. Select your video file (MP4, MOV, AVI)
+3. Wait for upload (may take several minutes for large files)
+
+### Confirm Selection
+
+Click **"Usar este video"**.
+
+### Verify URL
+
+The video URL populates in the text field.
+
+### Add More Videos
+
+Repeat for additional video files.
+
+</Steps>
+
+<Warning>
+**Video Upload Limitations:**
+- Server upload limits typically range from 2MB to 64MB
+- Large files may timeout during upload
+- Videos consume significant server storage and bandwidth
+- Playback performance depends on server capabilities
+
+Consider using YouTube or Vimeo for videos larger than 50MB.
+</Warning>
+
+### Adding YouTube Videos
+
+<Steps>
+
+### Get YouTube URL
+
+On YouTube:
+1. Navigate to your video
+2. Click the **Share** button
+3. Copy the full URL (e.g., `https://www.youtube.com/watch?v=dQw4w9WgXcQ`)
+
+Or copy the URL from your browser address bar.
+
+### Open Content Editor
+
+Edit the service or course where you want to add the video.
+
+### Find Video Link Section
+
+For services: **"🌐 Links de Video (YouTube/Vimeo)"** in Multimedia box
+
+For courses: **"Video de Introducción"** or **"Videos de Testimonios"**
+
+### Add Link Field
+
+Click **"+ Agregar Link"** (for services) or locate the URL input field (for courses).
+
+### Paste URL
+
+Paste the complete YouTube URL into the text field.
+
+### Add More Videos
+
+For services, repeat to add multiple videos.
+
+</Steps>
+
+#### YouTube URL Formats
+
+All of these formats work:
+
+```
+https://www.youtube.com/watch?v=VIDEO_ID
+https://youtu.be/VIDEO_ID
+https://www.youtube.com/embed/VIDEO_ID
+https://www.youtube.com/watch?v=VIDEO_ID&feature=share
+```
+
+### Adding Vimeo Videos
+
+<Steps>
+
+### Get Vimeo URL
+
+On Vimeo:
+1. Navigate to your video
+2. Copy the URL from the address bar (e.g., `https://vimeo.com/123456789`)
+
+Or click the Share button and copy the link.
+
+### Open Content Editor
+
+Edit the content where you want to add the video.
+
+### Find Video Link Section
+
+Locate the appropriate video URL field.
+
+### Paste URL
+
+Paste the complete Vimeo URL.
+
+</Steps>
+
+#### Vimeo URL Formats
+
+These formats work:
+
+```
+https://vimeo.com/VIDEO_ID
+https://player.vimeo.com/video/VIDEO_ID
+```
+
+### Video Best Practices
+
+#### Video Hosting
+
+**Use YouTube when:**
+- Videos are public marketing content
+- You want maximum reach and discoverability
+- You want to leverage YouTube's global CDN
+- File sizes are large (>100MB)
+
+**Use Vimeo when:**
+- You want more control over video appearance
+- You need privacy options (password protection)
+- You want an ad-free experience
+- You prefer a more professional presentation
+
+**Upload to WordPress when:**
+- Videos are very short (less than 30 seconds)
+- You have specific technical requirements
+- You have dedicated video hosting infrastructure
+- File sizes are small (less than 50MB)
+
+#### Video Content
+
+**For Service Videos:**
+- Show the service in action
+- Keep videos between 1-3 minutes
+- Include multiple videos for different aspects
+- Use captions for accessibility
+
+**For Course Introduction Videos:**
+- Keep under 3 minutes
+- Cover: What, Who, Why, and How
+- Show course highlights
+- Include a call-to-action
+
+**For Testimonial Videos:**
+- Authentic student experiences
+- Keep under 2 minutes each
+- Include diverse testimonials
+- Show results and transformations
+
+#### Video Quality
+
+- **Resolution**: Minimum 720p (1280x720), prefer 1080p
+- **Audio**: Clear audio with minimal background noise
+- **Lighting**: Well-lit, professional appearance
+- **Length**: Shorter is better (under 3 minutes ideal)
+
+## Removing Multimedia Content
+
+### Removing Images or Videos from Content
+
+<Steps>
+
+### Open Content Editor
+
+Edit the service or course containing the multimedia.
+
+### Find Multimedia Section
+
+Scroll to the appropriate multimedia meta box.
+
+### Click Remove
+
+Click the **"Eliminar"** button next to the image or video you want to remove.
+
+### Confirm
+
+The field is immediately removed from the page.
+
+### Save Changes
+
+Click **"Actualizar"** to save your changes.
+
+</Steps>
+
+<Note>
+Removing an image or video from a service/course does not delete the file from the Media Library. The file remains available for use elsewhere.
+</Note>
+
+### Deleting Files from Media Library
+
+<Steps>
+
+### Navigate to Media Library
+
+Click **Media > Library** in the sidebar.
+
+### Find File
+
+Search for or browse to find the file you want to delete.
+
+### Delete File
+
+Hover over the file and click **"Delete Permanently"**.
+
+### Confirm Deletion
+
+Click **OK** in the confirmation dialog.
+
+</Steps>
+
+<Warning>
+Deleting a file from the Media Library removes it completely. Any content using this file will show broken images or videos. Only delete files you're certain are not in use.
+</Warning>
+
+## Multimedia Organization
+
+### Using Media Library Organization
+
+<Steps>
+
+### Filter by Type
+
+Use the filter dropdown to view only images, videos, or other file types.
+
+### Filter by Date
+
+Use the date dropdown to view media uploaded in specific months.
+
+### Search Files
+
+Use the search box to find files by filename or title.
+
+### Grid vs. List View
+
+Toggle between grid view (thumbnails) and list view (detailed information).
+
+</Steps>
+
+### Naming Conventions
+
+Use consistent naming for easy organization:
+
+```
+[content-type]-[name]-[descriptor]-[number].ext
+
+Examples:
+service-wreck-diving-equipment-01.jpg
+service-wreck-diving-underwater-02.jpg
+course-open-water-intro-video.mp4
+course-open-water-testimonial-01-url
+```
+
+### Folder Organization (with plugins)
+
+Consider using a media library organizer plugin for large sites:
+
+- **FileBird**: Organize media into folders
+- **Media Library Folders**: Create folder structures
+- **Real Media Library**: Advanced media organization
+
+## Technical Considerations
+
+### Upload Limits
+
+WordPress upload limits depend on your server configuration:
+
+- **Shared Hosting**: Typically 2-8MB
+- **VPS/Dedicated**: Usually 64MB or higher
+- **Cloud Hosting**: Often 100MB+
+
+To check your limit:
+1. Go to **Media > Add New**
+2. Look for "Maximum upload file size" text
+
+To increase limits, contact your hosting provider or site administrator.
+
+### File Format Support
+
+#### Images
+- JPG/JPEG (best for photos)
+- PNG (best for graphics, logos, screenshots)
+- GIF (for simple animations)
+- WebP (modern format, smaller files)
+- SVG (vector graphics, requires plugin)
+
+#### Videos
+- MP4 (H.264) - best compatibility
+- MOV (QuickTime)
+- AVI
+- WMV
+- WebM
+
+#### Documents
+- PDF
+- DOC/DOCX
+- XLS/XLSX
+- ZIP
+
+### Performance Optimization
+
+#### Image Optimization Plugins
+
+Install an image optimization plugin:
+- **Smush**: Automatic image compression
+- **ShortPixel**: Advanced compression options
+- **Imagify**: Excellent compression with WebP support
+
+#### Lazy Loading
+
+Enable lazy loading (loads images only when they scroll into view):
+- Built into WordPress 5.5+
+- Can be enhanced with plugins
+
+#### CDN Integration
+
+For sites with heavy multimedia:
+- Use a Content Delivery Network (CDN)
+- CloudFlare, StackPath, or Bunny CDN
+- Dramatically improves load times globally
+
+## Troubleshooting
+
+### Images Not Displaying
+
+**Possible causes:**
+1. File was deleted from Media Library
+2. Incorrect permissions on uploads folder
+3. Browser caching showing old content
+4. Theme CSS hiding images
+
+**Solutions:**
+1. Re-upload the image
+2. Contact hosting provider about file permissions
+3. Clear browser cache (Ctrl+Shift+R)
+4. Check with developer about CSS issues
+
+### Video Not Embedding
+
+**For YouTube/Vimeo links:**
+1. Verify the video is public (not private)
+2. Check that the URL is complete
+3. Ensure the URL includes `https://`
+4. Try the share URL format
+
+**For uploaded videos:**
+1. Check file format is supported
+2. Verify file uploaded successfully
+3. Test video URL directly in browser
+4. Check server has sufficient storage
+
+### Upload Fails
+
+**Common issues:**
+1. File too large (exceeds server limit)
+2. Timeout on slow connections
+3. Unsupported file type
+4. Server storage full
+
+**Solutions:**
+1. Compress or resize the file
+2. Use a faster internet connection
+3. Check supported formats
+4. Contact hosting provider about storage
+
+### Media Library Slow
+
+**If Media Library loads slowly:**
+1. Use a media library organizer plugin
+2. Delete unused media files
+3. Implement pagination (limit items per page)
+4. Consider upgrading hosting
+
+## Related Guides
+
+- [Managing Services](/guides/managing-services) - Using multimedia in services
+- [Managing Courses](/guides/managing-courses) - Adding course videos and images
+- [Content Management Workflows](/guides/content-management) - General content tips

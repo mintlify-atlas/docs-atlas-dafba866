@@ -1,0 +1,412 @@
+---
+title: Styling & Design
+description: Customize the visual appearance of the VertiSub theme with colors, fonts, and CSS variables
+---
+
+The VertiSub theme uses a comprehensive design system built on CSS variables, WordPress theme.json, and custom stylesheets.
+
+## Color Palette
+
+The theme defines a rich color palette in both `style.css` (CSS variables) and `theme.json` (WordPress Block Editor).
+
+### CSS Variables
+
+Defined in `style.css` at `:root`:
+
+```css
+:root {
+  --primary-color: #0f1319;        /* bunker */
+  --secondary-color: #e3c5ca;      /* pink-flare */
+  --accent-color: #bb0c2b;         /* shiraz */
+  --accent-secondary: #bb1447;     /* cardinal */
+  --accent-tertiary: #bc7ece;      /* east-side */
+  --text-dark: #544949;            /* emperor */
+  --text-light: #ffffff;
+  --text-gray: #7b7b7b;            /* boulder */
+  --text-secondary: #aaa8a9;       /* shady-lady */
+  --gray-light: #aaa8a9;
+  --gray-medium: #9c9c9c;          /* dusty-gray */
+  --silver: #bcbcbc;
+  --transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  --text-muted: #aaa8a9;
+  --text-color: #544949;
+}
+```
+
+### Using Color Variables
+
+Use CSS variables in your custom styles:
+
+```css
+.custom-button {
+  background: var(--accent-color);
+  color: var(--text-light);
+  transition: var(--transition);
+}
+
+.custom-button:hover {
+  background: var(--accent-secondary);
+}
+
+.custom-heading {
+  color: var(--primary-color);
+}
+
+.muted-text {
+  color: var(--text-gray);
+}
+```
+
+### WordPress Block Editor Colors
+
+Defined in `theme.json` for the block editor:
+
+```json
+{
+  "settings": {
+    "color": {
+      "custom": true,
+      "customGradient": true,
+      "palette": [
+        {
+          "name": "Primary",
+          "slug": "primary",
+          "color": "#0f1319"
+        },
+        {
+          "name": "Secondary",
+          "slug": "secondary",
+          "color": "#e3c5ca"
+        },
+        {
+          "name": "Accent",
+          "slug": "accent",
+          "color": "#bb0c2b"
+        }
+      ]
+    }
+  }
+}
+```
+
+These colors appear in the WordPress Block Editor color picker and can be used with CSS classes:
+
+```html
+<p class="has-accent-color">This text uses the accent color</p>
+<div class="has-secondary-background-color">This div has a secondary background</div>
+```
+
+## Typography
+
+### Font Families
+
+The theme uses Google Fonts, primarily **Oswald**:
+
+```css
+body {
+  font-family: "Oswald", sans-serif;
+  line-height: 1.6;
+  color: var(--text-dark);
+}
+```
+
+### Available Font Families
+
+Defined in `theme.json`:
+
+```json
+{
+  "typography": {
+    "customFontSize": true,
+    "dropCap": true,
+    "fontFamilies": [
+      {
+        "fontFamily": "Oswald, sans-serif",
+        "slug": "oswald",
+        "name": "Oswald"
+      },
+      {
+        "fontFamily": "Exo 2, sans-serif",
+        "slug": "exo-2",
+        "name": "Exo 2"
+      },
+      {
+        "fontFamily": "Roboto, sans-serif",
+        "slug": "roboto",
+        "name": "Roboto"
+      }
+    ]
+  }
+}
+```
+
+### Loading Fonts
+
+Fonts are loaded via `inc/enqueue.php`:
+
+```php
+wp_enqueue_style(
+    'google-fonts',
+    'https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;600;700;900&display=swap',
+    array(),
+    null
+);
+```
+
+### Custom Typography Classes
+
+Use font families in your CSS:
+
+```css
+.heading-oswald {
+  font-family: "Oswald", sans-serif;
+  font-weight: 900;
+}
+
+.text-exo {
+  font-family: "Exo 2", sans-serif;
+}
+
+.text-roboto {
+  font-family: "Roboto", sans-serif;
+}
+```
+
+## Enqueuing Styles
+
+All styles are enqueued in `/inc/enqueue.php`:
+
+```php
+function sancho_enqueue_assets()
+{
+    // Bootstrap CSS
+    wp_enqueue_style(
+        'bootstrap-css',
+        'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
+        array(),
+        '5.3.0'
+    );
+
+    // AOS CSS (Animate On Scroll)
+    wp_enqueue_style(
+        'aos',
+        'https://unpkg.com/aos@2.3.4/dist/aos.css',
+        array(),
+        '2.3.4'
+    );
+
+    // Google Fonts
+    wp_enqueue_style(
+        'google-fonts',
+        'https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;600;700;900&display=swap',
+        array(),
+        null
+    );
+
+    // Font Awesome
+    wp_enqueue_style(
+        'font-awesome',
+        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+        array(),
+        '6.4.0'
+    );
+
+    // Main theme stylesheet
+    wp_enqueue_style(
+        'sancho-style',
+        get_stylesheet_uri(),
+        array('bootstrap-css'),
+        wp_get_theme()->get('Version')
+    );
+}
+add_action('wp_enqueue_scripts', 'sancho_enqueue_assets');
+```
+
+## Adding Custom Styles
+
+### Method 1: Modify style.css
+
+Add custom CSS directly to the theme's `style.css`:
+
+```css
+/* Custom Styles */
+.custom-card {
+  background: var(--secondary-color);
+  border-radius: 20px;
+  padding: 2rem;
+  transition: var(--transition);
+}
+
+.custom-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(187, 12, 43, 0.15);
+}
+```
+
+### Method 2: Enqueue a Custom Stylesheet
+
+Create a new CSS file and enqueue it:
+
+```php
+// In functions.php or inc/enqueue.php
+wp_enqueue_style(
+    'custom-styles',
+    get_template_directory_uri() . '/assets/css/custom.css',
+    array('sancho-style'),
+    '1.0.0'
+);
+```
+
+### Method 3: Add Inline Styles
+
+```php
+$custom_css = "
+    .hero-section {
+        background-color: var(--primary-color);
+    }
+";
+wp_add_inline_style('sancho-style', $custom_css);
+```
+
+## Customizing Colors
+
+### Change Primary Color
+
+1. **Update CSS variables** in `style.css`:
+
+```css
+:root {
+  --primary-color: #1a2533; /* Your new color */
+}
+```
+
+2. **Update theme.json** for Block Editor:
+
+```json
+{
+  "color": "#1a2533"
+}
+```
+
+### Create Color Variations
+
+Add new color variables:
+
+```css
+:root {
+  --success-color: #28a745;
+  --warning-color: #ffc107;
+  --danger-color: #dc3545;
+  --info-color: #17a2b8;
+}
+```
+
+Use them in your styles:
+
+```css
+.alert-success {
+  background: var(--success-color);
+  color: white;
+}
+```
+
+## Animation & Transitions
+
+The theme uses a consistent easing function:
+
+```css
+:root {
+  --transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+```
+
+Apply to elements:
+
+```css
+.animated-element {
+  transition: var(--transition);
+}
+
+.animated-element:hover {
+  transform: scale(1.1);
+}
+```
+
+## Responsive Design
+
+The theme includes responsive breakpoints:
+
+```css
+/* Tablet */
+@media (max-width: 1024px) {
+  .hero-section {
+    height: 75vh;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .hero-section {
+    height: 70vh;
+  }
+}
+```
+
+## WordPress Customizer
+
+The theme supports customization via **Appearance > Customize**. Settings are defined in `/inc/customize.php`:
+
+```php
+function vertisub_customize_register($wp_customize)
+{
+    // Add Footer Logo section
+    $wp_customize->add_section('vertisub_footer_logo_section', array(
+        'title'       => __('Logo Footer', 'vertisub'),
+        'priority'    => 30,
+        'description' => 'Logo que se muestra en el footer',
+    ));
+
+    // Add Footer Logo setting
+    $wp_customize->add_setting('vertisub_footer_logo', array(
+        'default' => '',
+        'sanitize_callback' => 'esc_url_raw',
+    ));
+
+    // Add Footer Logo control
+    $wp_customize->add_control(new WP_Customize_Image_Control(
+        $wp_customize, 
+        'vertisub_footer_logo', 
+        array(
+            'label'    => __('Subir Logo Footer', 'vertisub'),
+            'section'  => 'vertisub_footer_logo_section',
+            'settings' => 'vertisub_footer_logo',
+        )
+    ));
+}
+add_action('customize_register', 'vertisub_customize_register');
+```
+
+### Retrieve Customizer Values
+
+In templates:
+
+```php
+$footer_logo = get_theme_mod('vertisub_footer_logo');
+if ($footer_logo) {
+    echo '<img src="' . esc_url($footer_logo) . '" alt="Footer Logo">';
+}
+```
+
+## Best Practices
+
+1. **Use CSS variables** - They make theme-wide changes easier
+2. **Maintain consistency** - Stick to the defined color palette
+3. **Test responsive design** - Check all breakpoints
+4. **Use the transition variable** - For consistent animations
+5. **Update both style.css and theme.json** - Keep them in sync
+
+## Next Steps
+
+- [Menu Customization](/customization/menus) - Configure navigation menus
+- [Advanced Custom Fields](/customization/advanced-fields) - Work with custom fields
+- [Theme Setup](/customization/theme-setup) - Configure theme features

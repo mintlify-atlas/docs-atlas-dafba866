@@ -1,0 +1,203 @@
+---
+title: Theme Setup
+description: Configure the VertiSub theme with proper WordPress support and custom features
+---
+
+The VertiSub theme includes comprehensive setup configuration for WordPress features, custom image sizes, and theme support options.
+
+## Theme Initialization
+
+The theme setup is handled in `/inc/setup.php` and runs during the `after_setup_theme` hook:
+
+```php
+function sancho_theme_setup()
+{
+    // Add theme support for various features
+    add_theme_support('title-tag');
+    add_theme_support('post-thumbnails');
+    add_theme_support('html5', array(
+        'search-form',
+        'comment-form',
+        'comment-list',
+        'gallery',
+        'caption',
+    ));
+
+    // Add theme support for custom logo
+    add_theme_support('custom-logo', array(
+        'header-text' => array('site-title'),
+    ));
+
+    // Add custom image sizes
+    add_image_size('hero-image', 1920, 1080, true);
+    add_image_size('service-thumb', 400, 300, true);
+}
+add_action('after_setup_theme', 'sancho_theme_setup');
+```
+
+## Theme Constants
+
+The theme defines global constants in `functions.php` for easy path references:
+
+```php
+define('VERTISUB_URL', get_template_directory_uri());
+define('VERTISUB_DIR', get_template_directory());
+```
+
+Use these constants throughout your code:
+
+```php
+// Loading a file
+require_once VERTISUB_DIR . '/inc/custom-file.php';
+
+// Referencing an asset
+$image_url = VERTISUB_URL . '/assets/images/logo.png';
+```
+
+## Included Modules
+
+The theme automatically loads several functional modules:
+
+```php
+// Theme setup
+require_once VERTISUB_DIR . '/inc/setup.php';
+
+// Enqueue styles and scripts
+require_once VERTISUB_DIR . '/inc/enqueue.php';
+
+// Custom post types
+require_once VERTISUB_DIR . '/inc/cpts/certification.php';
+require_once VERTISUB_DIR . '/inc/cpts/clients.php';
+require_once VERTISUB_DIR . '/inc/cpts/countries.php';
+require_once VERTISUB_DIR . '/inc/cpts/courses.php';
+require_once VERTISUB_DIR . '/inc/cpts/documents.php';
+require_once VERTISUB_DIR . '/inc/cpts/services.php';
+
+// Utils
+require_once VERTISUB_DIR . '/inc/utils.php';
+
+// Security
+require_once VERTISUB_DIR . '/inc/security.php';
+
+// Performance
+require_once VERTISUB_DIR . '/inc/performance.php';
+
+// Menu
+require_once VERTISUB_DIR . '/inc/menu.php';
+
+// Customize sections
+require_once VERTISUB_DIR . '/inc/customize.php';
+```
+
+## WordPress Features
+
+### Title Tag Support
+
+The theme uses WordPress's built-in title tag management:
+
+```php
+add_theme_support('title-tag');
+```
+
+This allows WordPress to manage the `<title>` tag automatically.
+
+### Post Thumbnails
+
+Featured images are enabled for all post types:
+
+```php
+add_theme_support('post-thumbnails');
+```
+
+### HTML5 Support
+
+Modern HTML5 markup is enabled for:
+
+- Search forms
+- Comment forms
+- Comment lists
+- Galleries
+- Captions
+
+```php
+add_theme_support('html5', array(
+    'search-form',
+    'comment-form',
+    'comment-list',
+    'gallery',
+    'caption',
+));
+```
+
+### Custom Logo
+
+The theme supports WordPress custom logo functionality:
+
+```php
+add_theme_support('custom-logo', array(
+    'header-text' => array('site-title'),
+));
+```
+
+Users can upload a custom logo via **Appearance > Customize > Site Identity**.
+
+## Custom Image Sizes
+
+The theme registers two custom image sizes:
+
+### Hero Image
+
+```php
+add_image_size('hero-image', 1920, 1080, true);
+```
+
+- **Dimensions**: 1920 × 1080 pixels
+- **Hard crop**: Yes (images are cropped to exact dimensions)
+- **Usage**: Hero sections and banner images
+
+### Service Thumbnail
+
+```php
+add_image_size('service-thumb', 400, 300, true);
+```
+
+- **Dimensions**: 400 × 300 pixels
+- **Hard crop**: Yes
+- **Usage**: Service listing thumbnails
+
+### Using Custom Image Sizes
+
+In templates, retrieve images using these sizes:
+
+```php
+// Get hero image
+$hero_image = get_the_post_thumbnail_url(get_the_ID(), 'hero-image');
+
+// Get service thumbnail
+$service_thumb = get_the_post_thumbnail_url($post_id, 'service-thumb');
+
+// Display with img tag
+echo get_the_post_thumbnail($post_id, 'service-thumb', array(
+    'class' => 'service-thumbnail',
+    'alt' => get_the_title($post_id)
+));
+```
+
+## Theme Requirements
+
+- **WordPress Version**: 6.1 or higher
+- **PHP Version**: 8.0 or higher
+- **Required Plugin**: Advanced Custom Fields (ACF)
+
+## Best Practices
+
+1. **Don't modify core theme files directly** - Use a child theme for customizations
+2. **Use theme constants** - Always use `VERTISUB_DIR` and `VERTISUB_URL` for paths
+3. **Regenerate thumbnails** - After changing image sizes, regenerate existing thumbnails using a plugin
+4. **Test theme support** - Verify all WordPress features work correctly after setup changes
+
+## Next Steps
+
+- [Styling & Design](/customization/styling) - Customize colors, fonts, and CSS
+- [Menu Customization](/customization/menus) - Configure navigation menus
+- [Advanced Custom Fields](/customization/advanced-fields) - Work with ACF data

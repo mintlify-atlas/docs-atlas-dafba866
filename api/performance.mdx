@@ -1,0 +1,324 @@
+---
+title: Performance Functions
+description: Performance optimization functions for faster page loads and reduced overhead
+---
+
+Performance functions optimize the WordPress site by removing unnecessary features and reducing HTTP requests.
+
+## Performance Optimization
+
+### sancho_optimize_performance()
+
+Removes unnecessary WordPress features and disables emojis to optimize site performance.
+
+**Location:** `inc/performance.php:10`
+
+<ParamField path="return" type="void">
+  This function does not return a value. It removes various WordPress actions.
+</ParamField>
+
+**Optimizations Applied:**
+
+1. **Removes WordPress Generator Meta Tag**
+   - Action: `wp_head` → `wp_generator`
+   - Hides WordPress version from HTML source
+   - Minor security improvement
+
+2. **Removes Windows Live Writer Manifest Link**
+   - Action: `wp_head` → `wlwmanifest_link`
+   - Removes link to wlwmanifest.xml
+   - Not needed for most sites
+
+3. **Removes Really Simple Discovery (RSD) Link**
+   - Action: `wp_head` → `rsd_link`
+   - Removes link to xmlrpc.php discovery
+   - Reduces attack surface if XML-RPC not used
+
+4. **Disables Emoji Detection Script**
+   - Action: `wp_head` → `print_emoji_detection_script` (priority 7)
+   - Removes ~12KB JavaScript file
+   - Browsers natively support emojis now
+
+5. **Disables Emoji Styles**
+   - Action: `wp_print_styles` → `print_emoji_styles`
+   - Removes inline emoji CSS
+   - Reduces HTML bloat
+
+**Hook:** Automatically added to `init` action
+
+```php
+// Optimizations are automatically applied
+add_action('init', 'sancho_optimize_performance');
+```
+
+## Performance Impact
+
+These optimizations provide measurable improvements:
+
+### Removed HTTP Requests
+- ❌ `wp-emoji-release.min.js` (~12KB)
+- ❌ Emoji inline styles (~2KB)
+- ❌ Various meta tags and links
+
+### Page Weight Reduction
+- Approximately **14-16KB** saved per page load
+- Cleaner HTML source code
+- Fewer DNS lookups for emoji CDN
+
+## Additional Performance Optimizations
+
+Consider implementing these additional optimizations:
+
+### Disable Embeds
+
+Remove oEmbed functionality if not needed:
+
+```php
+function disable_embeds() {
+    // Remove embed JavaScript
+    remove_action('wp_head', 'wp_oembed_add_discovery_links');
+    remove_action('wp_head', 'wp_oembed_add_host_js');
+    
+    // Remove embed REST API endpoint
+    remove_action('rest_api_init', 'wp_oembed_register_route');
+    
+    // Turn off oEmbed auto discovery
+    add_filter('embed_oembed_discover', '__return_false');
+    
+    // Remove oEmbed-specific JavaScript from the front-end
+    remove_filter('the_content', array($GLOBALS['wp_embed'], 'autoembed'), 8);
+}
+add_action('init', 'disable_embeds');
+```
+
+### Remove Query Strings
+
+Remove version query strings from static resources:
+
+```php
+function remove_script_version($src) {
+    if (strpos($src, 'ver=')) {
+        $src = remove_query_arg('ver', $src);
+    }
+    return $src;
+}
+add_filter('style_loader_src', 'remove_script_version', 15);
+add_filter('script_loader_src', 'remove_script_version', 15);
+```
+
+### Defer JavaScript
+
+Defer non-critical JavaScript:
+
+```php
+function defer_scripts($tag, $handle, $src) {
+    // List of scripts to defer
+    $defer_scripts = array(
+        'jquery',
+        'contact-form-script',
+        'custom-scripts'
+    );
+    
+    if (in_array($handle, $defer_scripts)) {
+        return '<script src="' . $src . '" defer></script>';
+    }
+    
+    return $tag;
+}
+add_filter('script_loader_tag', 'defer_scripts', 10, 3);
+```
+
+### Lazy Load Images
+
+Enable native lazy loading:
+
+```php
+function add_lazy_loading($content) {
+    // Add loading="lazy" to images
+    $content = preg_replace(
+        '/<img(.*?)src=/i',
+        '<img$1loading="lazy" src=',
+        $content
+    );
+    return $content;
+}
+add_filter('the_content', 'add_lazy_loading');
+add_filter('post_thumbnail_html', 'add_lazy_loading');
+```
+
+### Disable Dashicons for Non-Admin Users
+
+Remove Dashicons CSS on frontend:
+
+```php
+function disable_dashicons_frontend() {
+    if (!is_user_logged_in()) {
+        wp_deregister_style('dashicons');
+    }
+}
+add_action('wp_enqueue_scripts', 'disable_dashicons_frontend');
+```
+
+### Limit Post Revisions
+
+Add to `wp-config.php`:
+
+```php
+// Limit post revisions
+define('WP_POST_REVISIONS', 3);
+
+// Set autosave interval to 5 minutes
+define('AUTOSAVE_INTERVAL', 300);
+```
+
+### Enable GZIP Compression
+
+Add to `.htaccess`:
+
+```apache
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE image/x-icon
+    AddOutputFilterByType DEFLATE image/svg+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/x-font
+    AddOutputFilterByType DEFLATE application/x-font-truetype
+    AddOutputFilterByType DEFLATE application/x-font-ttf
+    AddOutputFilterByType DEFLATE application/x-font-otf
+    AddOutputFilterByType DEFLATE application/x-font-opentype
+    AddOutputFilterByType DEFLATE application/vnd.ms-fontobject
+    AddOutputFilterByType DEFLATE font/ttf
+    AddOutputFilterByType DEFLATE font/otf
+    AddOutputFilterByType DEFLATE font/opentype
+</IfModule>
+```
+
+### Browser Caching
+
+Add to `.htaccess`:
+
+```apache
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Images
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+    
+    # Video
+    ExpiresByType video/mp4 "access plus 1 year"
+    ExpiresByType video/mpeg "access plus 1 year"
+    
+    # CSS, JavaScript
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    
+    # Fonts
+    ExpiresByType font/ttf "access plus 1 year"
+    ExpiresByType font/otf "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType application/font-woff "access plus 1 year"
+    
+    # Default
+    ExpiresDefault "access plus 2 days"
+</IfModule>
+```
+
+## Performance Testing
+
+Measure performance improvements using these tools:
+
+### Testing Tools
+- [Google PageSpeed Insights](https://pagespeed.web.dev/)
+- [GTmetrix](https://gtmetrix.com/)
+- [WebPageTest](https://www.webpagetest.org/)
+- [Pingdom](https://tools.pingdom.com/)
+
+### Monitoring
+
+```php
+// Log page generation time
+function log_page_generation_time() {
+    if (WP_DEBUG) {
+        $time = timer_stop(0, 3);
+        $queries = get_num_queries();
+        error_log("Page generated in {$time} seconds using {$queries} queries");
+    }
+}
+add_action('wp_footer', 'log_page_generation_time');
+```
+
+### Database Optimization
+
+```php
+// Clean up post meta on post deletion
+function cleanup_post_meta($post_id) {
+    global $wpdb;
+    $wpdb->delete(
+        $wpdb->postmeta,
+        array('post_id' => $post_id),
+        array('%d')
+    );
+}
+add_action('before_delete_post', 'cleanup_post_meta');
+```
+
+## Performance Best Practices
+
+1. **Use a Caching Plugin**
+   - WP Rocket, W3 Total Cache, or WP Super Cache
+   - Implement object caching with Redis or Memcached
+
+2. **Optimize Images**
+   - Use WebP format
+   - Compress images before upload
+   - Implement lazy loading
+
+3. **Use a CDN**
+   - Cloudflare, StackPath, or BunnyCDN
+   - Distribute static assets globally
+
+4. **Minimize Database Queries**
+   - Use transients for expensive queries
+   - Implement proper indexing
+
+5. **Keep WordPress Updated**
+   - Update core, themes, and plugins regularly
+   - Remove unused plugins and themes
+
+```php
+// Example: Cache expensive query
+function get_popular_posts() {
+    $cache_key = 'popular_posts_' . get_current_blog_id();
+    $posts = get_transient($cache_key);
+    
+    if (false === $posts) {
+        $posts = new WP_Query(array(
+            'post_type' => 'post',
+            'posts_per_page' => 10,
+            'meta_key' => 'post_views',
+            'orderby' => 'meta_value_num',
+            'order' => 'DESC'
+        ));
+        
+        // Cache for 1 hour
+        set_transient($cache_key, $posts, HOUR_IN_SECONDS);
+    }
+    
+    return $posts;
+}
+```

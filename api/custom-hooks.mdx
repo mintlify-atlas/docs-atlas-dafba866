@@ -1,0 +1,366 @@
+---
+title: Custom Hooks
+description: Custom action and filter hooks provided by the VertiSub theme for extensibility
+---
+
+The VertiSub theme provides custom hooks that allow developers to extend and modify theme functionality without editing core files.
+
+## Content Filters
+
+### apply_filters('the_content', $content)
+
+While this is a WordPress core filter, the theme uses it in several templates to ensure content is properly formatted.
+
+**Usage in Templates:**
+
+#### Policies Page
+
+**Location:** `templates/policies-vertisub.php:742`
+
+```php
+$contenido_doc = apply_filters('the_content', $doc->post_content);
+```
+
+**Example - Adding custom content processing:**
+
+```php
+add_filter('the_content', 'my_custom_content_filter', 20);
+
+function my_custom_content_filter($content) {
+    // Only apply to document post type
+    if (get_post_type() === 'documentos_pais') {
+        $content = '<div class="custom-doc-wrapper">' . $content . '</div>';
+    }
+    return $content;
+}
+```
+
+#### Services Page
+
+**Location:** `templates/services-page.php:134`
+
+```php
+$descripcion_full = apply_filters('the_content', get_the_content());
+```
+
+**Example - Modifying service descriptions:**
+
+```php
+add_filter('the_content', 'customize_service_content', 15);
+
+function customize_service_content($content) {
+    if (is_page_template('templates/services-page.php')) {
+        // Add a custom notice before service content
+        $notice = '<div class="service-notice">Contact us for more information</div>';
+        $content = $notice . $content;
+    }
+    return $content;
+}
+```
+
+#### Works Page
+
+**Location:** `templates/works-page.php:168`
+
+```php
+description: <?= json_encode(apply_filters('the_content', get_the_content())); ?>,
+```
+
+## Extending Theme Functionality
+
+### Hooking into Theme Setup
+
+You can extend the theme setup by hooking into `after_setup_theme` with a higher priority:
+
+```php
+add_action('after_setup_theme', 'my_theme_setup', 20);
+
+function my_theme_setup() {
+    // Add additional image sizes
+    add_image_size('custom-size', 800, 600, true);
+    
+    // Register additional nav menus
+    register_nav_menu('secondary_menu', __('Secondary Menu', 'vertisub'));
+    
+    // Add additional theme support
+    add_theme_support('custom-background');
+}
+```
+
+### Modifying Enqueued Assets
+
+You can modify or add assets by hooking into `wp_enqueue_scripts` with a higher priority:
+
+```php
+add_action('wp_enqueue_scripts', 'my_custom_assets', 20);
+
+function my_custom_assets() {
+    // Add custom stylesheet
+    wp_enqueue_style(
+        'my-custom-style',
+        get_stylesheet_directory_uri() . '/custom.css',
+        array('sancho-style'),
+        '1.0.0'
+    );
+    
+    // Add custom script
+    wp_enqueue_script(
+        'my-custom-script',
+        get_stylesheet_directory_uri() . '/custom.js',
+        array('sancho-script'),
+        '1.0.0',
+        true
+    );
+}
+```
+
+### Extending Custom Post Types
+
+You can modify custom post type arguments before registration:
+
+```php
+add_filter('register_post_type_args', 'modify_cpt_args', 10, 2);
+
+function modify_cpt_args($args, $post_type) {
+    // Add custom taxonomy support to services
+    if ($post_type === 'servicios') {
+        $args['taxonomies'] = array('category', 'post_tag');
+    }
+    
+    return $args;
+}
+```
+
+### Modifying Meta Box Data
+
+You can hook into the save process to add additional data:
+
+```php
+add_action('save_post_servicios', 'my_save_extra_service_meta', 20);
+
+function my_save_extra_service_meta($post_id) {
+    // Skip autosave
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    
+    // Save custom field
+    if (isset($_POST['my_custom_field'])) {
+        update_post_meta(
+            $post_id,
+            '_my_custom_field',
+            sanitize_text_field($_POST['my_custom_field'])
+        );
+    }
+}
+```
+
+### Customizing Navigation Menus
+
+Extend menu functionality by filtering menu items:
+
+```php
+add_filter('wp_nav_menu_items', 'add_custom_menu_items', 10, 2);
+
+function add_custom_menu_items($items, $args) {
+    if ($args->theme_location === 'primary_menu') {
+        // Add a custom button to the menu
+        $items .= '<li class="nav-item custom-btn">';
+        $items .= '<a href="/contact" class="nav-link btn-primary">Get Quote</a>';
+        $items .= '</li>';
+    }
+    return $items;
+}
+```
+
+### Modifying AJAX Responses
+
+You can hook into AJAX actions to modify responses:
+
+```php
+add_action('wp_ajax_sancho_contact', 'my_contact_form_extension', 5);
+add_action('wp_ajax_nopriv_sancho_contact', 'my_contact_form_extension', 5);
+
+function my_contact_form_extension() {
+    // Log contact form submissions
+    $log_entry = array(
+        'name' => sanitize_text_field($_POST['name']),
+        'email' => sanitize_email($_POST['email']),
+        'timestamp' => current_time('mysql')
+    );
+    
+    // Save to custom table or log file
+    error_log('Contact form submission: ' . print_r($log_entry, true));
+}
+```
+
+### Customizing Query Variables
+
+Add your own query variables:
+
+```php
+add_filter('query_vars', 'my_custom_query_vars');
+
+function my_custom_query_vars($vars) {
+    $vars[] = 'custom_filter';
+    $vars[] = 'sort_order';
+    return $vars;
+}
+```
+
+Then use them in templates:
+
+```php
+$custom_filter = get_query_var('custom_filter');
+$sort_order = get_query_var('sort_order');
+```
+
+### Modifying Security Headers
+
+You can add or modify security headers:
+
+```php
+add_action('send_headers', 'my_additional_security_headers', 20);
+
+function my_additional_security_headers() {
+    header('Content-Security-Policy: default-src \'self\'');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+}
+```
+
+### Customizing Image Sizes
+
+Add custom image size names for better semantics:
+
+```php
+add_filter('image_size_names_choose', 'my_custom_image_sizes');
+
+function my_custom_image_sizes($sizes) {
+    return array_merge($sizes, array(
+        'hero-image' => __('Hero Image (1920x1080)', 'vertisub'),
+        'service-thumb' => __('Service Thumbnail (400x300)', 'vertisub'),
+    ));
+}
+```
+
+## Creating Child Theme Hooks
+
+If you're creating a child theme, you can use these hooks to customize functionality:
+
+### Override Parent Theme Functions
+
+```php
+// In child theme's functions.php
+if (!function_exists('sancho_theme_setup')) {
+    function sancho_theme_setup() {
+        // Your custom setup
+        add_theme_support('woocommerce');
+        
+        // Call parent setup if needed
+        // parent_theme_setup();
+    }
+}
+```
+
+### Add Child Theme Assets
+
+```php
+add_action('wp_enqueue_scripts', 'child_theme_assets', 25);
+
+function child_theme_assets() {
+    // Enqueue parent theme stylesheet first
+    wp_enqueue_style(
+        'parent-style',
+        get_template_directory_uri() . '/style.css'
+    );
+    
+    // Then enqueue child theme stylesheet
+    wp_enqueue_style(
+        'child-style',
+        get_stylesheet_uri(),
+        array('parent-style')
+    );
+}
+```
+
+## Best Practices
+
+### Priority Management
+
+- Use priority `5` to run before theme functions
+- Use priority `15-20` to run after theme functions  
+- Use priority `99` for last-minute modifications
+
+### Conditional Execution
+
+Always check context before applying hooks:
+
+```php
+add_filter('the_content', 'my_content_filter');
+
+function my_content_filter($content) {
+    // Only apply to specific post types
+    if (!is_singular('servicios')) {
+        return $content;
+    }
+    
+    // Only apply on frontend
+    if (is_admin()) {
+        return $content;
+    }
+    
+    // Apply your modifications
+    return $content;
+}
+```
+
+### Data Sanitization
+
+Always sanitize data when saving:
+
+```php
+add_action('save_post', 'my_save_function');
+
+function my_save_function($post_id) {
+    // Sanitize text
+    $text = sanitize_text_field($_POST['field']);
+    
+    // Sanitize email
+    $email = sanitize_email($_POST['email']);
+    
+    // Sanitize URL
+    $url = esc_url_raw($_POST['url']);
+    
+    // Sanitize textarea
+    $textarea = sanitize_textarea_field($_POST['textarea']);
+    
+    // For HTML content
+    $html = wp_kses_post($_POST['content']);
+}
+```
+
+### Nonce Verification
+
+Always verify nonces for security:
+
+```php
+function my_save_function($post_id) {
+    // Verify nonce
+    if (!isset($_POST['my_nonce']) || 
+        !wp_verify_nonce($_POST['my_nonce'], 'my_action')) {
+        return;
+    }
+    
+    // Verify user capabilities
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+    
+    // Avoid autosave
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    
+    // Your save logic here
+}
+```

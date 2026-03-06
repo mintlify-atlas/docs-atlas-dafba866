@@ -1,0 +1,432 @@
+---
+title: 'Components'
+description: 'Reusable theme components and template parts'
+icon: 'puzzle-piece'
+---
+
+## Overview
+
+The VertiSub theme includes reusable components that can be included in templates using WordPress's `get_template_part()` function. These components provide consistent functionality across different pages.
+
+## Available Components
+
+### Floating Buttons
+**File:** `components/floating-buttons.php`
+
+<Info>
+Provides persistent WhatsApp contact button and "Back to Top" navigation across all pages.
+</Info>
+
+#### Usage
+
+Include this component in your templates:
+
+```php
+<?php get_template_part('components/floating-buttons'); ?>
+```
+
+Typically placed before the footer:
+
+```php
+<?php get_template_part('components/floating-buttons'); ?>
+<?php get_footer(); ?>
+```
+
+#### Component Structure
+
+```php
+<div id="floating-buttons" class="floating-buttons">
+    <!-- WhatsApp Button -->
+    <a href="<?php echo esc_url($wa_link); ?>" 
+       target="_blank" 
+       class="whatsapp-button" 
+       aria-label="Contactar por WhatsApp">
+        <!-- WhatsApp SVG Icon -->
+    </a>
+    
+    <!-- Back To Top Button -->
+    <button id="backToTop" 
+            class="back-to-top" 
+            aria-label="Volver al inicio">
+        <!-- Arrow Up SVG Icon -->
+    </button>
+</div>
+```
+
+#### WhatsApp Button
+
+**Configuration via Custom Post Type:**
+
+```php
+$args = array(
+    'post_type'      => 'whatsapp_button',
+    'posts_per_page' => 1,
+    'post_status'    => 'publish',
+);
+$wa_query = new WP_Query($args);
+```
+
+**Post Meta Fields:**
+- `whatsapp_number` - Phone number with country code (e.g., "573001234567")
+- `whatsapp_message` - Optional pre-filled message
+
+**Link Generation:**
+
+```php
+// Basic link (no message)
+$wa_link = 'https://wa.me/' . $number;
+
+// With pre-filled message
+$wa_link = 'https://wa.me/' . $number . '?text=' . urlencode($message);
+```
+
+**Visual Properties:**
+- Fixed position on screen (bottom-right)
+- Green background (#25D366 - WhatsApp brand color)
+- Circular button with icon
+- Opens in new tab/window
+- Includes accessibility label
+
+#### Back to Top Button
+
+**Functionality:**
+- Appears when user scrolls down
+- Smooth scroll to top of page
+- Arrow up icon
+- Fixed position (stacked above WhatsApp button)
+
+**JavaScript Integration:**
+
+```javascript
+// Show/hide based on scroll position
+window.addEventListener('scroll', function() {
+    const backToTop = document.getElementById('backToTop');
+    if (window.pageYOffset > 300) {
+        backToTop.classList.add('visible');
+    } else {
+        backToTop.classList.remove('visible');
+    }
+});
+
+// Smooth scroll to top
+document.getElementById('backToTop').addEventListener('click', function() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+});
+```
+
+#### SVG Icons
+
+**WhatsApp Icon:**
+```xml
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" 
+     xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2..." 
+          stroke="currentColor" stroke-width="1.5"/>
+    <path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97..." 
+          stroke="currentColor" stroke-width="1.5"/>
+</svg>
+```
+
+**Arrow Up Icon:**
+```xml
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" 
+     xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 19V5M5 12L12 5L19 12" 
+          stroke="currentColor" stroke-width="2"/>
+</svg>
+```
+
+#### Styling Requirements
+
+**CSS Classes:**
+- `.floating-buttons` - Container wrapper
+- `.whatsapp-button` - WhatsApp link styling
+- `.back-to-top` - Back to top button styling
+
+**Recommended CSS:**
+
+```css
+.floating-buttons {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.whatsapp-button {
+    width: 56px;
+    height: 56px;
+    background: #25D366;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+.whatsapp-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+.back-to-top {
+    width: 56px;
+    height: 56px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+}
+```
+
+#### Accessibility Features
+
+<Tip>
+Both buttons include proper ARIA labels for screen readers:
+- WhatsApp: `aria-label="Contactar por WhatsApp"`
+- Back to Top: `aria-label="Volver al inicio"`
+</Tip>
+
+#### Customization Options
+
+**Change WhatsApp Number:**
+1. Go to WordPress Admin
+2. Navigate to WhatsApp Button post type
+3. Edit or create post
+4. Update `whatsapp_number` meta field
+
+**Add Pre-filled Message:**
+
+```php
+$message = get_post_meta(get_the_ID(), 'whatsapp_message', true);
+$wa_link = 'https://wa.me/' . $number . '?text=' . urlencode($message);
+```
+
+**Modify Button Position:**
+
+```css
+/* Left side instead of right */
+.floating-buttons {
+    left: 20px;
+    right: auto;
+}
+
+/* Top instead of bottom */
+.floating-buttons {
+    top: 20px;
+    bottom: auto;
+}
+```
+
+---
+
+## Component Integration
+
+### Loader Component
+**File:** `loader.php`
+
+<Info>
+Page loading screen displayed while assets load.
+</Info>
+
+**Usage:**
+```php
+<?php get_template_part('loader'); ?>
+```
+
+**Typical Implementation:**
+```javascript
+window.addEventListener('load', function() {
+    setTimeout(() => {
+        document.getElementById('loader').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('loader').style.display = 'none';
+        }, 500);
+    }, 1000);
+});
+```
+
+---
+
+## Creating Custom Components
+
+### Component File Structure
+
+```
+theme/
+├── components/
+│   ├── floating-buttons.php
+│   ├── custom-component.php
+│   └── another-component.php
+```
+
+### Component Template Example
+
+```php
+<?php
+/**
+ * Component Name: Custom Widget
+ * Description: Brief description of what this component does
+ * 
+ * @package VertiSubTheme
+ */
+
+// Component logic here
+$data = get_option('component_data');
+
+if (!$data) {
+    return; // Exit if no data
+}
+?>
+
+<div class="custom-component">
+    <!-- Component HTML -->
+    <h3><?php echo esc_html($data['title']); ?></h3>
+    <div class="content">
+        <?php echo wp_kses_post($data['content']); ?>
+    </div>
+</div>
+
+<script>
+// Component JavaScript
+(function() {
+    // Component initialization
+})();
+</script>
+
+<style>
+/* Component-specific styles */
+.custom-component {
+    /* Styles here */
+}
+</style>
+```
+
+### Including Custom Components
+
+```php
+// In template file
+<?php get_template_part('components/custom-component'); ?>
+
+// With slug and name
+<?php get_template_part('components/widget', 'sidebar'); ?>
+// Looks for: components/widget-sidebar.php
+
+// Pass variables (WordPress 5.5+)
+<?php 
+get_template_part('components/card', null, [
+    'title' => 'Card Title',
+    'content' => 'Card content here'
+]); 
+?>
+```
+
+---
+
+## Best Practices
+
+<Warning>
+**Component Isolation**
+
+Keep components self-contained and avoid dependencies on specific page contexts:
+
+```php
+// Good: Component checks for required data
+if (!isset($required_data)) {
+    return;
+}
+
+// Bad: Assumes data exists
+echo $required_data['field'];
+```
+</Warning>
+
+<Tip>
+**Reusability**
+
+Design components to be reusable across different templates:
+
+```php
+// Accept parameters
+$args = wp_parse_args($args, [
+    'show_title' => true,
+    'button_text' => 'Learn More'
+]);
+```
+</Tip>
+
+### Performance Optimization
+
+1. **Minimize Database Queries:**
+```php
+// Cache component data
+$transient_key = 'component_data_' . get_locale();
+$data = get_transient($transient_key);
+
+if (false === $data) {
+    $data = expensive_query();
+    set_transient($transient_key, $data, HOUR_IN_SECONDS);
+}
+```
+
+2. **Conditional Loading:**
+```php
+// Only load if needed
+if (is_page_template('templates/home-template.php')) {
+    get_template_part('components/hero-slider');
+}
+```
+
+3. **Lazy Loading Assets:**
+```php
+// Enqueue scripts only when component is used
+wp_enqueue_script('component-script');
+```
+
+---
+
+## Component Testing
+
+### Checklist
+
+- [ ] Component displays correctly on all templates where used
+- [ ] No PHP errors or warnings
+- [ ] Responsive design (mobile, tablet, desktop)
+- [ ] Accessibility (ARIA labels, keyboard navigation)
+- [ ] Performance (minimal queries, optimized assets)
+- [ ] Works without JavaScript (progressive enhancement)
+- [ ] Properly escaped output (XSS prevention)
+- [ ] Internationalization ready (translatable strings)
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Page Templates" icon="file-code" href="/api/page-templates">
+    Learn about page templates
+  </Card>
+  <Card title="Custom Post Types" icon="database" href="/api/custom-post-types">
+    Custom post type reference
+  </Card>
+</CardGroup>

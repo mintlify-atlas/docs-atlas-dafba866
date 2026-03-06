@@ -1,0 +1,484 @@
+---
+title: 'Page Templates'
+description: 'Complete reference for all page templates in the VertiSub CMS theme'
+icon: 'file-code'
+---
+
+## Overview
+
+The VertiSub theme includes 10 custom page templates designed for specific content types. Each template is registered using WordPress's Template Name header and can be assigned to pages through the WordPress admin.
+
+## Available Templates
+
+### Home Template
+**File:** `templates/home-template.php`  
+**Template Name:** Home
+
+<Info>
+The main landing page template featuring banners, solutions section, projects showcase, and news feed.
+</Info>
+
+#### Key Features
+- Multi-slide banner carousel with navigation
+- Solutions section with parallax scrolling
+- Projects/works modal display
+- News cards grid
+- GSAP-powered scroll animations
+
+#### Template Structure
+```php
+<?php
+/*
+Template Name: Home
+*/
+?>
+<!DOCTYPE html>
+<html <?php language_attributes(); ?>>
+<head>
+    <!-- Custom CSS includes -->
+    <link rel="stylesheet" href="<?php echo get_template_directory_uri(); ?>/assets/Home-B5GaeNAV.css" />
+    <!-- GSAP Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+</head>
+<body <?php body_class(); ?>>
+    <?php get_header(); ?>
+    
+    <!-- Banner Carousel -->
+    <!-- Solutions Section -->
+    <!-- Projects Section -->
+    <!-- News Section -->
+    
+    <?php get_footer(); ?>
+</body>
+</html>
+```
+
+#### ACF Field Groups Used
+- `banners` - Banner carousel slides
+- `soluciones` - Solutions/services section
+- `proyectos` - Projects showcase
+- `novedades` - News section
+
+#### JavaScript Functions
+- Banner carousel with auto-rotation (6 second intervals)
+- Project modal with navigation arrows
+- GSAP scroll-triggered animations
+- Smooth parallax effects
+
+---
+
+### About Us Page
+**File:** `templates/about-us-page.php`  
+**Template Name:** Nosotros
+
+<Info>
+Comprehensive about page featuring company history, mission, vision, team, and contact information.
+</Info>
+
+#### Sections
+1. **Hero Section** - Title, breadcrumb, description with image
+2. **Solutions Section** - Company overview with video
+3. **Mission & Vision** - Side-by-side display
+4. **International Presence** - Statistics with counter animations
+5. **Clients Section** - Client showcase with testimonials
+6. **Philosophy Section** - Company values and quotes
+7. **Contact Section** - Contact info and policy information
+
+#### ACF Fields
+```php
+vertisub_get_acf_field('hero')          // Hero section data
+vertisub_get_acf_field('soluciones')    // Solutions section
+vertisub_get_acf_field('mision')        // Mission & vision
+vertisub_get_acf_field('internacional') // Statistics
+vertisub_get_acf_field('nuestros_clientes') // Clients
+vertisub_get_acf_field('filosofia')     // Philosophy
+vertisub_get_acf_field('escribenos')    // Contact section
+```
+
+#### Custom Post Types
+- `clientes` - Client logos and testimonials
+
+---
+
+### Services Page
+**File:** `templates/services-page.php`  
+**Template Name:** Servicios
+
+<Info>
+Dynamic services page filtered by country with expandable service cards.
+</Info>
+
+#### Features
+- URL-based country filtering using slug
+- Expandable service cards with media galleries
+- WhatsApp contact integration
+- Country-specific contact information display
+
+#### Country Detection
+```php
+// Extract country slug from URL
+$current_url = home_url(add_query_arg(NULL, NULL));
+$url_path = parse_url($current_url, PHP_URL_PATH);
+$segments = explode('/', trim($url_path, '/'));
+$pais_slug = strtolower(end($segments));
+
+// Query country ID from slug
+$pais_id = $wpdb->get_var($wpdb->prepare(
+    "SELECT post_id FROM $wpdb->postmeta 
+    WHERE meta_key = '_pais_slug' 
+    AND LOWER(meta_value) = %s",
+    $pais_slug
+));
+```
+
+#### Service Card Structure
+- Featured image
+- Service title and short description
+- Expandable full description
+- Media gallery (images, videos, embeds)
+- WhatsApp contact button
+
+#### Custom Post Types
+- `servicios` - Service entries
+- `whatsapp_button` - WhatsApp configuration
+
+---
+
+### Certifications Page
+**File:** `templates/certifications-page.php`  
+**Template Name:** Certificaciones
+
+<Info>
+Showcase certifications with clickable logos opening detailed modal views.
+</Info>
+
+#### Features
+- Horizontal scrolling certification carousel
+- Modal with certification details
+- Keyboard navigation (arrow keys, ESC)
+- Navigation arrows for browsing
+
+#### Modal Navigation
+```javascript
+// Next/Previous certification
+function showNextCert() {
+    currentIndex = (currentIndex + 1) % certLogos.length;
+    loadModalData(currentIndex);
+}
+
+// Keyboard support
+document.addEventListener("keydown", function(e) {
+    if (!modal.classList.contains("active")) return;
+    if (e.key === "ArrowRight") showNextCert();
+    if (e.key === "ArrowLeft") showPrevCert();
+    if (e.key === "Escape") closeModal();
+});
+```
+
+#### Custom Post Types
+- `certificaciones` - Certification entries with image and description
+
+---
+
+### Courses Page
+**File:** `templates/courses-page.php`  
+**Template Name:** Formaciones
+
+<Info>
+Training and course catalog with expandable cards showing detailed curriculum.
+</Info>
+
+#### Course Card Features
+- Course thumbnail and title
+- Expandable sections:
+  - Course modalities (online, in-person, hybrid)
+  - Training levels
+  - Course images carousel
+  - Testimonial videos carousel
+- Call-to-action buttons (enroll, more info)
+- Platform and official page links
+
+#### ACF Meta Fields
+```php
+_curso_imagenes       // Gallery images
+_curso_modalidades    // Course delivery modes
+_curso_temario        // Curriculum items
+_curso_url_inscribir  // Enrollment URL
+_curso_url_info       // Info request URL
+_curso_url_plataforma // Learning platform URL
+_curso_url_oficial    // Official page URL
+_curso_instructores   // Instructor data
+_curso_paises         // Available countries
+```
+
+#### Interactive Elements
+```javascript
+function expandCertification(button) {
+    const card = button.closest('.certification-card');
+    card.classList.add('expanded');
+    
+    // Scroll to expanded card
+    setTimeout(() => {
+        card.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }, 300);
+}
+```
+
+---
+
+### Location Page
+**File:** `templates/location-page.php`  
+**Template Name:** Ubicacion
+
+<Info>
+Interactive map showing company locations worldwide.
+</Info>
+
+#### Features
+- Interactive world map (using amCharts or similar)
+- Modal displaying country-specific contact details
+- Loading indicator
+- Click-to-view location information
+
+#### Modal Content
+- Country flag
+- Office addresses
+- Phone numbers
+- Email addresses
+- Contact person information
+
+---
+
+### News Page
+**File:** `templates/news-page.php`  
+**Template Name:** Noticias
+
+<Info>
+News and blog post listing with card-based layout.
+</Info>
+
+#### Features
+- Grid layout for news cards
+- Featured image for each post
+- Excerpt with word limit (20 words)
+- "Read More" link to full post
+- AOS (Animate On Scroll) effects
+
+#### Query Configuration
+```php
+$args = array(
+    'post_type'      => 'post',
+    'posts_per_page' => 6,
+    'post_status'    => 'publish'
+);
+$noticias = new WP_Query($args);
+```
+
+---
+
+### Works/Jobs Page
+**File:** `templates/works-page.php`  
+**Template Name:** trabaja con nosotros
+
+<Info>
+Job listings with advanced filtering and application functionality.
+</Info>
+
+#### Features
+- Search by title/description
+- Filter by location
+- Filter by experience level
+- Expandable job details modal
+- Email application with pre-filled template
+
+#### Filter System
+```javascript
+function filterJobs() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const locationFilter = document.getElementById('locationFilter').value;
+    const experienceFilter = document.getElementById('experienceFilter').value;
+    
+    // Filter logic with skeleton loaders
+    showSkeletonLoaders();
+    
+    setTimeout(() => {
+        // Apply filters
+        hideSkeletonLoaders();
+        updateResultsCount();
+    }, 600);
+}
+```
+
+#### Job Card Data
+```php
+$vacante = get_post_meta(get_the_ID(), '_vacante', true);
+// Contains:
+// - lugar (location)
+// - tipo_contrato (contract type)
+// - experiencia (years required)
+// - responsabilidades (responsibilities array)
+// - requisitos (requirements array)
+// - beneficios (benefits array)
+// - email (contact email)
+```
+
+---
+
+### Policies Page (Vertisub)
+**File:** `templates/policies-vertisub.php`  
+**Template Name:** Politicas Vertisub
+
+<Info>
+Company policies organized by country with expandable document sections.
+</Info>
+
+#### Features
+- Country flags with FlagCDN integration
+- Expandable policy sections
+- Document download links
+- Hover animations and effects
+
+#### Country Flag Generation
+```php
+$slug = strtolower(get_post_meta($pais->ID, '_pais_slug', true));
+$bandera = "https://flagcdn.com/w80/{$slug}.png";
+```
+
+#### Document Structure
+```php
+// Get documents by country
+$docs = get_posts([
+    'post_type'  => 'documentos_pais',
+    'meta_query' => [[
+        'key'     => '_pais_relacionado',
+        'value'   => $pais->ID,
+        'compare' => '='
+    ]]
+]);
+```
+
+---
+
+### Privacy Policy Page
+**File:** `templates/privacity-page.php`  
+**Template Name:** Politicas Privacidad
+
+<Info>
+Comprehensive privacy policy with navigation and downloadable sections.
+</Info>
+
+#### Sections
+1. Introduction
+2. Purpose (Objeto)
+3. Scope (Alcance)
+4. Definitions (Definiciones)
+5. Principles (Principios)
+6. Authorization (Autorización)
+7. Data Usage Purpose (Finalidad)
+8. User Rights (Derechos)
+9. Security (Seguridad)
+10. Contact Information
+
+#### Navigation Menu
+```php
+<nav class="privacy-nav-privacy">
+    <ul class="nav-list-privacy">
+        <li><a href="#section-intro">Introducción</a></li>
+        <li><a href="#section-objeto">Objeto</a></li>
+        <li><a href="#section-alcance">Alcance</a></li>
+        <!-- More sections -->
+    </ul>
+</nav>
+```
+
+---
+
+## Common Template Features
+
+### ACF Helper Function
+All templates use a custom ACF helper function:
+
+```php
+vertisub_get_acf_field($field_name, $options = false)
+```
+
+**Parameters:**
+- `$field_name` - ACF field name
+- `$options` - Options page field (true/false)
+
+**Returns:** Field value or null
+
+### Standard Template Components
+
+#### Hero Section Pattern
+```php
+<?php if (vertisub_get_acf_field('mostrar_hero')) : ?>
+    <?php $hero_data = vertisub_get_acf_field('hero'); ?>
+    <section class="hero-about-section">
+        <div class="container">
+            <div class="breadcrumb-custom">
+                <a href="<?php echo esc_url(home_url('/')); ?>">Inicio</a>
+                <span><?= $hero_data['breadcrumb']; ?></span>
+            </div>
+            <h1><?= $hero_data['titulo']; ?></h1>
+            <p><?= $hero_data['descripcion']; ?></p>
+        </div>
+    </section>
+<?php endif; ?>
+```
+
+## Template Hierarchy
+
+WordPress loads templates in this order:
+
+1. Custom page template (if assigned)
+2. `page-{slug}.php`
+3. `page-{id}.php`
+4. `page.php`
+5. `singular.php`
+6. `index.php`
+
+## Best Practices
+
+<Warning>
+Always check if ACF fields exist before displaying:
+```php
+if ($field_data && $field_data['titulo']) :
+    echo $field_data['titulo'];
+endif;
+```
+</Warning>
+
+<Tip>
+Use `wp_reset_postdata()` after custom WP_Query loops:
+```php
+if ($query->have_posts()) :
+    while ($query->have_posts()) : $query->the_post();
+        // Loop content
+    endwhile;
+    wp_reset_postdata();
+endif;
+```
+</Tip>
+
+## Template Hooks
+
+Common action hooks used in templates:
+- `wp_head()` - Enqueues scripts/styles in `<head>`
+- `body_class()` - Adds dynamic body classes
+- `language_attributes()` - Adds language attributes to `<html>`
+- `wp_footer()` - Enqueues footer scripts
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Components" icon="puzzle-piece" href="/api/components">
+    Reusable template components
+  </Card>
+  <Card title="Header & Footer" icon="rectangle-wide" href="/api/header-footer">
+    Theme header and footer files
+  </Card>
+</CardGroup>

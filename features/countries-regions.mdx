@@ -1,0 +1,502 @@
+---
+title: Countries and Regions
+description: Managing geographic presence with interactive maps and detailed contact information
+---
+
+The Countries and Regions feature provides a comprehensive system for managing your organization's geographic presence with interactive maps powered by amCharts 5.
+
+## Overview
+
+The countries system (`paises` post type) enables:
+- Country/region contact information
+- Multiple emails, phones, and WhatsApp numbers
+- Interactive world map with clickable countries
+- Country-specific service and course associations
+- Dynamic contact modals with flags and details
+
+## Post Type Registration
+
+Countries are registered in `inc/cpts/countries.php:10-35`:
+
+```php
+function vertisub_create_paises_post_type()
+{
+    register_post_type(
+        'paises',
+        array(
+            'labels' => array(
+                'name'               => 'Países',
+                'singular_name'      => 'País',
+                'add_new'            => 'Añadir país',
+                'add_new_item'       => 'Añadir país',
+                'edit_item'          => 'Editar país',
+                'new_item'           => 'Nuevo país',
+                'view_item'          => 'Ver país',
+                'search_items'       => 'Buscar países',
+                'not_found'          => 'No se encontraron países',
+                'not_found_in_trash' => 'No hay países en la papelera',
+            ),
+            'public'      => true,
+            'has_archive' => false,
+            'menu_icon'   => 'dashicons-location-alt',
+            'supports'    => array('title', 'editor'),
+            'rewrite'     => array('slug' => 'paises'),
+        )
+    );
+}
+add_action('init', 'vertisub_create_paises_post_type');
+```
+
+## Meta Fields
+
+| Meta Key | Type | Description |
+|----------|------|-------------|
+| `_pais_slug` | string | Country code (ISO 3166-1 alpha-2 lowercase) |
+| `_contacto` | string | Main contact person or office name |
+| `_direccion` | string | Physical address (supports line breaks) |
+| `_correos` | array | Email addresses |
+| `_telefonos` | array | Phone numbers |
+| `_whatsapps` | array | WhatsApp numbers |
+
+## Creating a Country
+
+### Basic Information
+
+1. Navigate to **Países > Añadir país**
+2. Enter the country name as title (e.g., "Colombia", "México")
+3. Add any general information in the editor (optional)
+
+### Country Code (Slug)
+
+The country slug is critical for map integration:
+
+```php
+<p>
+    <label for="pais_slug"><strong>Código/Slug del País (ej: ESP, COL, MEX):</strong></label><br>
+    <input type="text" name="pais_slug" id="pais_slug" 
+           value="<?php echo esc_attr($slug); ?>" 
+           style="width: 150px; text-transform: uppercase;">
+</p>
+```
+
+Use ISO 3166-1 alpha-2 codes:
+- Colombia: `CO`
+- Mexico: `MX`
+- Spain: `ES`
+- United States: `US`
+- Brazil: `BR`
+
+### Contact Information
+
+#### Main Contact
+```php
+<input type="text" name="contacto" 
+       value="<?= esc_attr($contacto) ?>" class="widefat">
+```
+Example: "VertiSub Colombia Office" or "Juan Pérez - Regional Manager"
+
+#### Address
+```php
+<textarea name="direccion" class="widefat"><?= esc_textarea($direccion) ?></textarea>
+```
+Example:
+```
+Carrera 7 No. 71-21, Piso 5
+Bogotá, Colombia
+C.P. 110221
+```
+
+### Multiple Contact Fields
+
+The system supports dynamic arrays of emails, phones, and WhatsApp numbers:
+
+#### Email Addresses
+```php
+<div id="correos-wrapper">
+    <?php if (!empty($correos)) : ?>
+        <?php foreach ($correos as $mail) : ?>
+            <div class="field-row">
+                <input type="email" name="correos[]" 
+                       value="<?= esc_attr($mail) ?>" class="widefat">
+                <button type="button" class="button remove-field">❌</button>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
+</div>
+<button type="button" class="button" 
+        onclick="addField('correos-wrapper','correos[]','email')">
+    + Agregar correo
+</button>
+```
+
+#### Phone Numbers
+```php
+<div id="telefonos-wrapper">
+    <?php if (!empty($telefonos)) : ?>
+        <?php foreach ($telefonos as $tel) : ?>
+            <div class="field-row">
+                <input type="text" name="telefonos[]" 
+                       value="<?= esc_attr($tel) ?>" class="widefat">
+                <button type="button" class="button remove-field">❌</button>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
+</div>
+```
+
+#### WhatsApp Numbers
+```php
+<div id="whatsapps-wrapper">
+    <?php if (!empty($whatsapps)) : ?>
+        <?php foreach ($whatsapps as $wa) : ?>
+            <div class="field-row">
+                <input type="text" name="whatsapps[]" 
+                       value="<?= esc_attr($wa) ?>" class="widefat">
+                <button type="button" class="button remove-field">❌</button>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
+</div>
+```
+
+### JavaScript Field Management
+
+Dynamic field addition:
+
+```javascript
+function addField(wrapperId, fieldName, type = "text") {
+    const wrapper = document.getElementById(wrapperId);
+    const div = document.createElement("div");
+    div.className = "field-row";
+
+    const input = document.createElement("input");
+    input.type = type;
+    input.name = fieldName;
+    input.className = "widefat";
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "button remove-field";
+    btn.innerText = "❌";
+    btn.onclick = function() { div.remove(); };
+
+    div.appendChild(input);
+    div.appendChild(btn);
+    wrapper.appendChild(div);
+}
+```
+
+## Saving Country Data
+
+```php
+function vertisub_save_paises_meta($post_id)
+{
+    if (!isset($_POST['pais_slug_nonce']) || 
+        !wp_verify_nonce($_POST['pais_slug_nonce'], 'guardar_pais_slug')) {
+        return;
+    }
+
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+
+    // Save country slug in uppercase
+    if (isset($_POST['pais_slug'])) {
+        $slug = sanitize_text_field($_POST['pais_slug']);
+        update_post_meta($post_id, '_pais_slug', strtoupper($slug));
+    }
+
+    update_post_meta($post_id, '_contacto', 
+        sanitize_text_field($_POST['contacto'] ?? ''));
+    update_post_meta($post_id, '_direccion', 
+        sanitize_textarea_field($_POST['direccion'] ?? ''));
+
+    // Save arrays with sanitization
+    $correos = array_filter(array_map('sanitize_email', $_POST['correos'] ?? []));
+    update_post_meta($post_id, '_correos', $correos);
+
+    $telefonos = array_filter(array_map('sanitize_text_field', $_POST['telefonos'] ?? []));
+    update_post_meta($post_id, '_telefonos', $telefonos);
+
+    $whatsapps = array_filter(array_map('sanitize_text_field', $_POST['whatsapps'] ?? []));
+    update_post_meta($post_id, '_whatsapps', $whatsapps);
+}
+add_action('save_post', 'vertisub_save_paises_meta');
+```
+
+## Interactive Map Integration
+
+### Loading amCharts 5
+
+The map uses amCharts 5, loaded in `inc/enqueue.php:118-122`:
+
+```php
+wp_enqueue_script('amcharts-core', 
+    'https://cdn.amcharts.com/lib/5/index.js', array(), null, true);
+wp_enqueue_script('amcharts-map', 
+    'https://cdn.amcharts.com/lib/5/map.js', array('amcharts-core'), null, true);
+wp_enqueue_script('amcharts-world', 
+    'https://cdn.amcharts.com/lib/5/geodata/worldLow.js', 
+    array('amcharts-core', 'amcharts-map'), null, true);
+wp_enqueue_script('amcharts-animated', 
+    'https://cdn.amcharts.com/lib/5/themes/Animated.js', 
+    array('amcharts-core'), null, true);
+```
+
+### Passing Data to JavaScript
+
+Country data is localized on the location page (`inc/enqueue.php:134-203`):
+
+```php
+if (is_page('ubicacion')) {
+    $args = array(
+        'post_type'      => 'paises',
+        'posts_per_page' => -1,
+    );
+    $query = new WP_Query($args);
+
+    $data = array();
+
+    if ($query->have_posts()) {
+        while ($query->have_posts()) {
+            $query->the_post();
+
+            $slug      = strtolower(get_post_meta(get_the_ID(), '_pais_slug', true));
+            $contacto  = get_post_meta(get_the_ID(), '_contacto', true);
+            $direccion = get_post_meta(get_the_ID(), '_direccion', true);
+            $correos   = get_post_meta(get_the_ID(), '_correos', true);
+            $telefonos = get_post_meta(get_the_ID(), '_telefonos', true);
+            $whatsapps = get_post_meta(get_the_ID(), '_whatsapps', true);
+
+            $flag_url = "https://flagcdn.com/w80/{$slug}.png";
+
+            $data[$slug] = array(
+                'name'   => get_the_title(),
+                'flag'   => $flag_url,
+                'type'   => 'Oficina Regional',
+                'status' => 'regional',
+                'contacts' => array(
+                    'address' => array(
+                        'label' => 'Dirección',
+                        'value' => wpautop($direccion),
+                        'icon'  => 'map-marker-alt',
+                    ),
+                    'phones' => array(
+                        'label'    => 'Teléfonos',
+                        'icon'     => 'phone',
+                        'multiple' => true,
+                        'values'   => array_map(function ($tel) {
+                            return array(
+                                'label'  => 'Número',
+                                'number' => $tel,
+                                'link'   => 'tel:' . preg_replace('/\D/', '', $tel),
+                            );
+                        }, $telefonos ?: []),
+                    ),
+                    'whatsapp' => array(
+                        'label'    => 'WhatsApp',
+                        'icon'     => 'comment',
+                        'multiple' => true,
+                        'values'   => array_map(function ($wa) {
+                            return array(
+                                'label'  => 'Número',
+                                'number' => $wa,
+                                'link'   => 'https://wa.me/' . preg_replace('/\D/', '', $wa),
+                            );
+                        }, $whatsapps ?: []),
+                    ),
+                    'email' => array(
+                        'label' => 'Correo Electrónico',
+                        'icon'  => 'envelope',
+                        'value' => implode(', ', array_map(function ($mail) {
+                            return '<a href="mailto:' . $mail . '">' . $mail . '</a>';
+                        }, $correos ?: [])),
+                    ),
+                ),
+            );
+        }
+        wp_reset_postdata();
+    }
+
+    wp_localize_script('maps-js', 'contactData', $data);
+}
+```
+
+### Map Initialization
+
+The map is initialized in `assets/js/map.js:37-191`:
+
+```javascript
+function initializeMap() {
+    var root = am5.Root.new("chartdiv");
+    root.setThemes([am5themes_Animated.new(root)]);
+
+    var chart = root.container.children.push(
+        am5map.MapChart.new(root, {
+            panX: "translateX",
+            panY: "translateY",
+            projection: am5map.geoMercator(),
+            homeZoomLevel: 1.9,
+            homeGeoPoint: { longitude: -60, latitude: -10 },
+        })
+    );
+
+    var polygonSeries = chart.series.push(
+        am5map.MapPolygonSeries.new(root, {
+            geoJSON: am5geodata_worldLow,
+            exclude: ["AQ"],
+        })
+    );
+
+    // Color countries based on contactData
+    polygonSeries.mapPolygons.template.adapters.add(
+        "fill",
+        function (fill, target) {
+            const countryCode = target.dataItem?.dataContext?.id?.toLowerCase();
+            if (countryCode && contactData[countryCode]) {
+                return am5.color(getPaletteColor(countryCode));
+            }
+            return am5.color("#e0e0e0");
+        }
+    );
+
+    // Handle country clicks
+    polygonSeries.mapPolygons.template.on("active", function (active, target) {
+        if (target.get("active")) {
+            var countryCode = target.dataItem?.dataContext?.id.toLowerCase();
+            if (contactData[countryCode]) {
+                showContactModal(countryCode);
+                polygonSeries.zoomToDataItem(target.dataItem);
+            }
+        }
+    });
+}
+```
+
+### Contact Modal Display
+
+Clicking a country opens a modal with contact details:
+
+```javascript
+function showContactModal(countryCode) {
+    const contact = contactData[countryCode];
+    if (!contact) return;
+
+    // Update modal header
+    document.getElementById("modalTitle").textContent = contact.name;
+    document.getElementById("countryFlag").src = contact.flag;
+
+    // Update contact grid
+    const contactGrid = document.getElementById("contactGrid");
+    contactGrid.innerHTML = "";
+
+    for (const [key, contactInfo] of Object.entries(contact.contacts)) {
+        const contactItem = document.createElement("div");
+        contactItem.className = "contact-item";
+
+        if (contactInfo.multiple) {
+            // Render phone/WhatsApp lists
+            // ...
+        } else {
+            // Render single fields (address, email)
+            contactItem.innerHTML = `
+                <div class="contact-icon">
+                    <i class="fas fa-${contactInfo.icon}"></i>
+                </div>
+                <div class="contact-details">
+                    <div class="contact-label">${contactInfo.label}</div>
+                    <div class="contact-value">${contactInfo.value}</div>
+                </div>
+            `;
+        }
+
+        contactGrid.appendChild(contactItem);
+    }
+
+    document.getElementById("contactModal").classList.add("show");
+}
+```
+
+## Retrieving Country Data
+
+### Get Country Information
+
+```php
+$country_id = 123; // Country post ID
+
+$slug = get_post_meta($country_id, '_pais_slug', true);
+$contacto = get_post_meta($country_id, '_contacto', true);
+$direccion = get_post_meta($country_id, '_direccion', true);
+$correos = get_post_meta($country_id, '_correos', true) ?: [];
+$telefonos = get_post_meta($country_id, '_telefonos', true) ?: [];
+$whatsapps = get_post_meta($country_id, '_whatsapps', true) ?: [];
+```
+
+### Display Contact Information
+
+```php
+<div class="country-contact">
+    <h3><?php echo get_the_title($country_id); ?></h3>
+    
+    <?php if ($contacto) : ?>
+        <p><strong>Contacto:</strong> <?php echo esc_html($contacto); ?></p>
+    <?php endif; ?>
+    
+    <?php if ($direccion) : ?>
+        <p><strong>Dirección:</strong><br>
+        <?php echo nl2br(esc_html($direccion)); ?></p>
+    <?php endif; ?>
+    
+    <?php if (!empty($correos)) : ?>
+        <p><strong>Correos:</strong><br>
+        <?php foreach ($correos as $mail) : ?>
+            <a href="mailto:<?php echo esc_attr($mail); ?>">
+                <?php echo esc_html($mail); ?>
+            </a><br>
+        <?php endforeach; ?>
+        </p>
+    <?php endif; ?>
+    
+    <?php if (!empty($telefonos)) : ?>
+        <p><strong>Teléfonos:</strong><br>
+        <?php foreach ($telefonos as $tel) : ?>
+            <a href="tel:<?php echo esc_attr(preg_replace('/\D/', '', $tel)); ?>">
+                <?php echo esc_html($tel); ?>
+            </a><br>
+        <?php endforeach; ?>
+        </p>
+    <?php endif; ?>
+    
+    <?php if (!empty($whatsapps)) : ?>
+        <p><strong>WhatsApp:</strong><br>
+        <?php foreach ($whatsapps as $wa) : ?>
+            <a href="https://wa.me/<?php echo esc_attr(preg_replace('/\D/', '', $wa)); ?>" 
+               target="_blank">
+                <?php echo esc_html($wa); ?>
+            </a><br>
+        <?php endforeach; ?>
+        </p>
+    <?php endif; ?>
+</div>
+```
+
+## Best Practices
+
+1. **Correct Country Codes**: Always use lowercase ISO 3166-1 alpha-2 codes
+2. **Multiple Contacts**: Add multiple emails and phones for redundancy
+3. **International Format**: Use international format for phone numbers (+XX XXX XXX XXXX)
+4. **Complete Addresses**: Include postal codes and building details
+5. **Active Numbers**: Ensure all WhatsApp numbers are active
+6. **Regular Updates**: Keep contact information current
+7. **Flag Display**: Country codes must match for flags to display correctly
+
+## Workflow Example
+
+1. Create country: "Colombia"
+2. Set slug: `co` (lowercase)
+3. Add contact: "VertiSub Colombia"
+4. Add address with full details including postal code
+5. Add 2 email addresses: info@vertisub.co and ventas@vertisub.co
+6. Add 2 phone numbers in international format
+7. Add 1 WhatsApp number for instant contact
+8. Publish and verify country appears on map
+9. Test clicking country on map to see modal
+10. Verify flag displays correctly (from flagcdn.com)

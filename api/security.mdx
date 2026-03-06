@@ -1,0 +1,237 @@
+---
+title: Security Functions
+description: Security headers and protection mechanisms for the VertiSub theme
+---
+
+Security functions implement best practices for protecting your WordPress site from common vulnerabilities and attacks.
+
+## Security Headers
+
+### vertisub_security_headers()
+
+Sets HTTP security headers to prevent various types of attacks including XSS, clickjacking, and MIME-type sniffing.
+
+**Location:** `inc/security.php:13`
+
+<ParamField path="return" type="void">
+  This function does not return a value. It sets HTTP headers in the response.
+</ParamField>
+
+**Headers Set:**
+
+1. **X-Content-Type-Options: nosniff**
+   - Prevents MIME-type sniffing attacks
+   - Tells browsers to respect the Content-Type header
+   - Blocks execution of scripts with incorrect MIME types
+
+2. **X-Frame-Options: SAMEORIGIN**
+   - Prevents clickjacking attacks
+   - Allows framing only from same origin
+   - Protects against UI redress attacks
+
+3. **X-XSS-Protection: 1; mode=block**
+   - Enables browser XSS filtering
+   - Blocks page rendering if XSS attack detected
+   - Additional layer of protection for older browsers
+
+**Hook:** Automatically added to `send_headers` action
+
+```php
+// Headers are automatically sent on every page load
+add_action('send_headers', 'vertisub_security_headers');
+```
+
+**Response Headers:**
+```http
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+```
+
+## Security Best Practices
+
+The theme implements several security measures throughout:
+
+### Nonce Verification
+
+All form submissions use WordPress nonces for CSRF protection:
+
+```php
+// Example from contact form handler
+if (!wp_verify_nonce($_POST['nonce'], 'sancho_nonce')) {
+    wp_die('Security check failed');
+}
+```
+
+### Input Sanitization
+
+All user input is sanitized before processing:
+
+```php
+// Text field sanitization
+$name = sanitize_text_field($_POST['name']);
+
+// Email sanitization
+$email = sanitize_email($_POST['email']);
+
+// Textarea sanitization
+$message = sanitize_textarea_field($_POST['message']);
+
+// URL sanitization
+$url = esc_url_raw($_POST['url']);
+
+// HTML content sanitization (allows safe HTML)
+$content = wp_kses_post($_POST['content']);
+```
+
+### Capability Checks
+
+User permissions are verified before data modifications:
+
+```php
+// Check if user can edit post
+if (!current_user_can('edit_post', $post_id)) {
+    return;
+}
+```
+
+### Autosave Prevention
+
+Meta box saves are protected from autosave interference:
+
+```php
+if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+    return;
+}
+```
+
+## Additional Security Recommendations
+
+While the theme implements several security measures, consider these additional protections:
+
+### Content Security Policy (CSP)
+
+Add a more comprehensive CSP header:
+
+```php
+function my_enhanced_security_headers() {
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';");
+}
+add_action('send_headers', 'my_enhanced_security_headers');
+```
+
+### Strict Transport Security (HSTS)
+
+Force HTTPS connections:
+
+```php
+function my_hsts_header() {
+    if (is_ssl()) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
+    }
+}
+add_action('send_headers', 'my_hsts_header');
+```
+
+### Referrer Policy
+
+Control referrer information:
+
+```php
+function my_referrer_policy() {
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+}
+add_action('send_headers', 'my_referrer_policy');
+```
+
+### Permissions Policy
+
+Control browser features:
+
+```php
+function my_permissions_policy() {
+    header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+}
+add_action('send_headers', 'my_permissions_policy');
+```
+
+## Security Testing
+
+Test your security headers using online tools:
+
+- [Mozilla Observatory](https://observatory.mozilla.org/)
+- [Security Headers](https://securityheaders.com/)
+- [SSL Labs](https://www.ssllabs.com/ssltest/)
+
+```php
+// Verify headers are being sent
+function check_security_headers() {
+    if (WP_DEBUG) {
+        $headers = headers_list();
+        error_log('Current headers: ' . print_r($headers, true));
+    }
+}
+add_action('wp_head', 'check_security_headers');
+```
+
+## Common Security Patterns
+
+### Escaping Output
+
+Always escape data when outputting to HTML:
+
+```php
+// Text content
+echo esc_html($text);
+
+// HTML attributes
+echo '<div class="' . esc_attr($class) . '">';
+
+// URLs
+echo '<a href="' . esc_url($url) . '">';
+
+// JavaScript
+echo '<script>var data = ' . wp_json_encode($data) . ';</script>';
+
+// Textarea content
+echo '<textarea>' . esc_textarea($content) . '</textarea>';
+```
+
+### Validating File Uploads
+
+```php
+function validate_file_upload($file) {
+    $allowed_types = array('image/jpeg', 'image/png', 'application/pdf');
+    
+    if (!in_array($file['type'], $allowed_types)) {
+        return new WP_Error('invalid_type', 'Invalid file type');
+    }
+    
+    if ($file['size'] > 5242880) { // 5MB
+        return new WP_Error('too_large', 'File too large');
+    }
+    
+    return true;
+}
+```
+
+### Protecting AJAX Endpoints
+
+```php
+function my_ajax_handler() {
+    // Verify nonce
+    check_ajax_referer('my_nonce', 'nonce');
+    
+    // Check capabilities
+    if (!current_user_can('edit_posts')) {
+        wp_send_json_error('Insufficient permissions');
+    }
+    
+    // Sanitize input
+    $data = sanitize_text_field($_POST['data']);
+    
+    // Process and respond
+    wp_send_json_success($data);
+}
+add_action('wp_ajax_my_action', 'my_ajax_handler');
+```

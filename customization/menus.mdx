@@ -1,0 +1,422 @@
+---
+title: Menu Customization
+description: Configure and customize navigation menus with custom walkers, dropdown support, and icon integration
+---
+
+The VertiSub theme includes powerful menu customization features with custom walkers for desktop and mobile navigation, dropdown support, and icon integration.
+
+## Registered Menu Locations
+
+The theme registers four menu locations in `/inc/menu.php`:
+
+```php
+function vertisub_register_menus()
+{
+    register_nav_menus(array(
+        'primary_menu' => __('Menú Principal', 'vertisub'),
+    ));
+
+    register_nav_menus(array(
+        'footer_menu'    => __('Footer', 'vertisub'),
+        'footer_empresa' => __('Footer Empresa', 'vertisub'),
+        'footer_legal'   => __('Footer Legal', 'vertisub'),
+    ));
+}
+add_action('after_setup_theme', 'vertisub_register_menus');
+```
+
+### Available Locations
+
+1. **primary_menu** - Main navigation in header
+2. **footer_menu** - General footer links
+3. **footer_empresa** - Company information footer links
+4. **footer_legal** - Legal/policy footer links
+
+## Assigning Menus
+
+Assign menus via **Appearance > Menus** in WordPress admin:
+
+1. Create a new menu or select existing
+2. Add pages, posts, or custom links
+3. Check the location checkbox (e.g., "Menú Principal")
+4. Save the menu
+
+## Custom Menu Walkers
+
+The theme includes two custom walker classes for enhanced menu rendering.
+
+### Desktop Walker
+
+The `Vertisub_Walker_Desktop` class creates dropdown menus for desktop navigation:
+
+```php
+class Vertisub_Walker_Desktop extends Walker_Nav_Menu
+{
+    private function has_children($item_id, $items)
+    {
+        foreach ($items as $item) {
+            if ($item->menu_item_parent == $item_id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function start_lvl(&$output, $depth = 0, $args = null)
+    {
+        $indent = str_repeat("\t", $depth);
+        $output .= "\n$indent<ul class=\"dropdown-menu\">\n";
+    }
+
+    function start_el(&$output, $item, $depth = 0, $args = null, $id = 0)
+    {
+        $indent = ($depth) ? str_repeat("\t", $depth) : '';
+        global $wp_query;
+        $all_items = wp_get_nav_menu_items($args->menu ?? '');
+        $has_children = $this->has_children($item->ID, $all_items);
+
+        if ($depth == 0) {
+            $li_class = $has_children ? 'nav-item has-dropdown' : 'nav-item';
+            $output .= $indent . '<li class="' . $li_class . '">';
+            $href = $has_children ? '#' : esc_attr($item->url);
+            $output .= '<a href="' . $href . '" class="nav-link">';
+
+            // Add icon if set
+            $icon = get_post_meta($item->ID, '_menu_item_icon', true);
+            if (!empty($icon)) {
+                $output .= '<i class="' . esc_attr($icon) . '"></i>';
+            }
+
+            $output .= esc_html($item->title);
+
+            if ($has_children) {
+                $output .= '<i class="fas fa-chevron-down dropdown-arrow"></i>';
+            }
+
+            $output .= '</a>';
+        }
+    }
+}
+```
+
+### Mobile Walker (Offcanvas)
+
+The `Vertisub_Walker_Offcanvas` class creates mobile-friendly navigation:
+
+```php
+class Vertisub_Walker_Offcanvas extends Walker_Nav_Menu
+{
+    function start_lvl(&$output, $depth = 0, $args = null)
+    {
+        $indent = str_repeat("\t", $depth);
+        $output .= "\n$indent<div class=\"mobile-dropdown\">\n";
+    }
+
+    function start_el(&$output, $item, $depth = 0, $args = null, $id = 0)
+    {
+        $classes = empty($item->classes) ? array() : (array) $item->classes;
+        $has_children = in_array('menu-item-has-children', $classes);
+
+        if ($depth == 0) {
+            $li_class = $has_children ? 'nav-item has-dropdown' : 'nav-item';
+            $output .= '<li class="' . $li_class . '">';
+            $output .= '<a href="' . esc_attr($item->url) . '" class="nav-link">';
+            $output .= '<div class="link-content">';
+
+            // Add icon
+            $icon = get_post_meta($item->ID, '_menu_item_icon', true);
+            if (!empty($icon)) {
+                $output .= '<i class="' . esc_attr($icon) . '"></i>';
+            }
+
+            $output .= '<span>' . esc_html($item->title) . '</span>';
+            $output .= '</div>';
+
+            if ($has_children) {
+                $output .= '<i class="fas fa-chevron-down dropdown-arrow"></i>';
+            }
+
+            $output .= '</a>';
+        }
+    }
+}
+```
+
+## Displaying Menus
+
+### Primary Menu (Desktop)
+
+Use the custom walker for desktop navigation:
+
+```php
+wp_nav_menu(array(
+    'theme_location' => 'primary_menu',
+    'container'      => 'nav',
+    'container_class' => 'nav-links',
+    'menu_class'     => 'nav-list',
+    'walker'         => new Vertisub_Walker_Desktop()
+));
+```
+
+### Mobile Menu (Offcanvas)
+
+```php
+wp_nav_menu(array(
+    'theme_location' => 'primary_menu',
+    'container'      => 'nav',
+    'menu_class'     => 'nav-list',
+    'walker'         => new Vertisub_Walker_Offcanvas()
+));
+```
+
+### Footer Menus
+
+```php
+// General footer menu
+wp_nav_menu(array(
+    'theme_location' => 'footer_menu',
+    'container'      => 'nav',
+    'menu_class'     => 'footer-menu'
+));
+
+// Company footer menu
+wp_nav_menu(array(
+    'theme_location' => 'footer_empresa',
+    'container'      => 'nav',
+    'menu_class'     => 'footer-menu-empresa'
+));
+
+// Legal footer menu
+wp_nav_menu(array(
+    'theme_location' => 'footer_legal',
+    'container'      => 'nav',
+    'menu_class'     => 'footer-menu-legal'
+));
+```
+
+## Menu Item Icons
+
+The theme supports Font Awesome icons for menu items using custom post meta.
+
+### Adding Icon Support
+
+Icons are stored as post meta with key `_menu_item_icon`. The walker retrieves them:
+
+```php
+$icon = get_post_meta($item->ID, '_menu_item_icon', true);
+if (!empty($icon)) {
+    $output .= '<i class="' . esc_attr($icon) . '"></i>';
+}
+```
+
+### Setting Icons Programmatically
+
+```php
+// Get menu item ID
+$menu_item_id = 123;
+
+// Set Font Awesome icon class
+update_post_meta($menu_item_id, '_menu_item_icon', 'fas fa-home');
+```
+
+### Available Icon Examples
+
+```php
+// Home icon
+'fas fa-home'
+
+// Services icon
+'fas fa-briefcase'
+
+// About icon
+'fas fa-info-circle'
+
+// Contact icon
+'fas fa-envelope'
+
+// Angle right (for submenus)
+'fas fa-angle-right'
+```
+
+## Custom Menu Classes
+
+The theme automatically adds CSS classes to menu elements.
+
+### Link Classes
+
+```php
+function vertisub_add_nav_link_class($atts, $item, $args)
+{
+    if ($args->theme_location === 'primary_menu') {
+        $atts['class'] = 'nav-link';
+    }
+
+    if ($args->theme_location === 'footer_menu' || 
+        $args->theme_location === 'footer_empresa' || 
+        $args->theme_location === 'footer_legal') {
+        $atts['class'] = 'footer-link';
+    }
+
+    return $atts;
+}
+add_filter('nav_menu_link_attributes', 'vertisub_add_nav_link_class', 10, 3);
+```
+
+### List Item Classes
+
+```php
+function vertisub_add_footer_li_class($classes, $item, $args)
+{
+    if ($args->theme_location === 'footer_menu' || 
+        $args->theme_location === 'footer_empresa' || 
+        $args->theme_location === 'footer_legal') {
+        $classes[] = 'footer-link-item';
+    }
+    return $classes;
+}
+add_filter('nav_menu_css_class', 'vertisub_add_footer_li_class', 10, 3);
+```
+
+## Dropdown Menu Styling
+
+### Desktop Dropdown CSS
+
+```css
+.nav-links .dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  padding: 1rem 0;
+  min-width: 250px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: var(--transition);
+  z-index: 999;
+}
+
+.nav-links .nav-item.has-dropdown.active .dropdown-menu {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+```
+
+### Mobile Dropdown CSS
+
+```css
+.nav-list .mobile-dropdown {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  background: rgba(225, 26, 83, 0.02);
+  border-radius: 8px;
+  margin-top: 0.25rem;
+}
+
+.nav-list .nav-item.has-dropdown.active .mobile-dropdown {
+  max-height: 300px;
+}
+```
+
+## Menu Features
+
+### Dropdown Arrows
+
+Parent items automatically get dropdown arrows:
+
+```php
+if ($has_children) {
+    $output .= '<i class="fas fa-chevron-down dropdown-arrow"></i>';
+}
+```
+
+CSS rotation on active:
+
+```css
+.nav-item.has-dropdown.active .dropdown-arrow {
+  transform: rotate(180deg);
+}
+```
+
+### Active States
+
+JavaScript toggles active class:
+
+```javascript
+document.querySelectorAll('.has-dropdown > .nav-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        this.parentElement.classList.toggle('active');
+    });
+});
+```
+
+## Advanced Customization
+
+### Add Custom Fields to Menu Items
+
+Extend the menu item edit screen:
+
+```php
+function custom_menu_item_fields($item_id, $item, $depth, $args) {
+    $icon = get_post_meta($item_id, '_menu_item_icon', true);
+    ?>
+    <p class="field-icon description">
+        <label for="edit-menu-item-icon-<?php echo $item_id; ?>">
+            <?php _e('Font Awesome Icon Class'); ?><br />
+            <input type="text" 
+                   id="edit-menu-item-icon-<?php echo $item_id; ?>" 
+                   name="menu-item-icon[<?php echo $item_id; ?>]" 
+                   value="<?php echo esc_attr($icon); ?>" />
+        </label>
+    </p>
+    <?php
+}
+add_action('wp_nav_menu_item_custom_fields', 'custom_menu_item_fields', 10, 4);
+
+// Save custom field
+function save_custom_menu_item_fields($menu_id, $menu_item_db_id) {
+    if (isset($_POST['menu-item-icon'][$menu_item_db_id])) {
+        update_post_meta(
+            $menu_item_db_id, 
+            '_menu_item_icon', 
+            sanitize_text_field($_POST['menu-item-icon'][$menu_item_db_id])
+        );
+    }
+}
+add_action('wp_update_nav_menu_item', 'save_custom_menu_item_fields', 10, 2);
+```
+
+### Create a Mega Menu
+
+Extend the walker for multi-column dropdowns:
+
+```php
+function start_lvl(&$output, $depth = 0, $args = null)
+{
+    if ($depth == 0) {
+        $output .= '<div class="mega-menu"><div class="mega-menu-content">';
+    }
+    $output .= '<ul class="dropdown-menu">';
+}
+```
+
+## Best Practices
+
+1. **Use custom walkers** - They provide better control over markup
+2. **Add meaningful icons** - Icons improve visual hierarchy
+3. **Test on mobile** - Ensure offcanvas menu works properly
+4. **Keep menus shallow** - Limit to 2 levels of depth
+5. **Use descriptive labels** - Clear menu item names improve UX
+
+## Next Steps
+
+- [Styling & Design](/customization/styling) - Style your menus
+- [Advanced Custom Fields](/customization/advanced-fields) - Add custom data to pages
+- [Theme Setup](/customization/theme-setup) - Configure theme features

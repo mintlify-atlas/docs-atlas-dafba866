@@ -1,0 +1,555 @@
+---
+title: ACF Integration
+description: Advanced Custom Fields integration in the VertiSub theme including field groups, usage patterns, and JSON sync
+---
+
+## Overview
+
+The VertiSub theme is tightly integrated with Advanced Custom Fields (ACF) for flexible content management. All field configurations are synchronized via JSON files in the `acf-json/` directory for version control and deployment.
+
+## ACF JSON Sync
+
+ACF field groups are stored as JSON files for easy version control and deployment.
+
+### JSON File Location
+
+```
+vertisubtheme/acf-json/
+├── group_68e95aa039dd5.json
+├── group_68ed9a325f5cc.json
+├── group_68edbf681dd09.json
+├── group_68ee947b0c6e5.json
+├── group_68ee988a2e350.json
+├── group_68f0ec6780201.json
+├── group_68f0efc199300.json
+├── group_68f11ef8eb79e.json
+├── group_68f67609ccbee.json
+├── ui_options_page_68edbe8302c40.json
+└── ui_options_page_68edbf2466a29.json
+```
+
+### How JSON Sync Works
+
+1. **Automatic Export**: When you save a field group in WordPress admin, ACF automatically exports it to JSON
+2. **Version Control**: Commit JSON files to Git for tracking changes
+3. **Automatic Import**: On other environments, ACF detects and imports JSON files
+
+### Benefits
+
+- **Version Control**: Track field changes in Git
+- **Easy Deployment**: Copy JSON files between environments
+- **Team Collaboration**: Share field configurations
+- **Backup**: JSON files serve as field group backups
+
+## Utility Function
+
+The theme provides a wrapper function for ACF field access:
+
+### vertisub_get_acf_field()
+
+**File:** `inc/utils.php`
+
+```php
+// inc/utils.php:84-93
+function vertisub_get_acf_field(string $field_name, bool $option_page = false)
+{
+    if (function_exists('get_field')) {
+        if ($option_page) {
+            return get_field($field_name, 'option');
+        }
+        return get_field($field_name);
+    }
+    return '';
+}
+```
+
+### Usage Examples
+
+```php
+// Get field from current page/post
+$hero_data = vertisub_get_acf_field('hero');
+$banners = vertisub_get_acf_field('banners');
+
+// Get field from options page
+$global_settings = vertisub_get_acf_field('site_settings', true);
+$footer_text = vertisub_get_acf_field('footer_copyright', true);
+
+// Safely handles missing ACF plugin
+if ($hero_data) {
+    // ACF is active and field has value
+}
+```
+
+### Why Use This Function?
+
+1. **Plugin Detection**: Checks if ACF is active
+2. **Fallback**: Returns empty string if ACF is missing
+3. **Consistency**: Standardized field access across theme
+4. **Options Support**: Easy access to options page fields
+
+## Common Field Types
+
+### Repeater Fields
+
+Used for repeating content like banners, projects, or team members.
+
+#### Banner Repeater Example
+
+```php
+// templates/home-template.php:148-175
+<?php $banners = vertisub_get_acf_field('banners'); ?>
+<?php if ($banners) : ?>
+    <?php foreach ($banners as $index => $banner) : ?>
+        <div class="slide">
+            <img src="<?= esc_url($banner['imagen']); ?>"
+                alt="<?= esc_attr($banner['titulo']); ?>">
+            <div class="content">
+                <?php if (!empty($banner['subtitulo'])) : ?>
+                    <p><?= esc_html($banner['subtitulo']); ?></p>
+                <?php endif; ?>
+                
+                <?php if (!empty($banner['titulo'])) : ?>
+                    <h2><?= esc_html($banner['titulo']); ?></h2>
+                <?php endif; ?>
+                
+                <?php if (!empty($banner['descripcion'])) : ?>
+                    <p><?= esc_html($banner['descripcion']); ?></p>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endforeach; ?>
+<?php endif; ?>
+```
+
+**Expected Field Structure:**
+```
+banners (Repeater)
+├── imagen (Image)
+├── titulo (Text)
+├── subtitulo (Text)
+└── descripcion (Textarea)
+```
+
+#### Projects Repeater Example
+
+```php
+// templates/home-template.php:231-252
+<?php $proyects_data = $proyectos_data['proyectos_datos']; ?>
+<?php if ($proyects_data) : ?>
+    <?php foreach ($proyects_data as $proyect) : ?>
+        <article class="work-item"
+            data-title="<?= $proyect['titulo']; ?>"
+            data-country="<?= $proyect['pais']; ?>"
+            data-image="<?= $proyect['imagen']; ?>"
+            data-description="<?= $proyect['descripcion']; ?>">
+            <h3><?= $proyect['titulo']; ?></h3>
+            <span><?= $proyect['pais']; ?></span>
+        </article>
+    <?php endforeach; ?>
+<?php endif; ?>
+```
+
+### Group Fields
+
+Organize related fields together.
+
+#### Solutions Group Example
+
+```php
+// templates/home-template.php:187-213
+<?php $soluciones_data = vertisub_get_acf_field('soluciones'); ?>
+<?php if ($soluciones_data) : ?>
+    <section id="short-description-section">
+        <h2><?= $soluciones_data['titulo']; ?></h2>
+        
+        <?php $soluciones_url = $soluciones_data['imagen_lateral'] 
+            ? $soluciones_data['imagen_lateral'] 
+            : "https://vertisub.com/default-image.jpg"; ?>
+        <img src="<?= $soluciones_url; ?>" alt="Descripción">
+    </section>
+<?php endif; ?>
+```
+
+**Expected Field Structure:**
+```
+soluciones (Group)
+├── titulo (Text)
+└── imagen_lateral (Image)
+```
+
+#### Hero Group Example
+
+```php
+// templates/services-page.php:22-57
+<?php $hero_data = vertisub_get_acf_field('hero'); ?>
+<section class="hero-about-section">
+    <?php if ($hero_data['breadcrumb']) : ?>
+        <div class="breadcrumb-custom">
+            <a href="<?php echo esc_url(home_url('/')); ?>">Inicio</a>
+            <span><?= $hero_data['breadcrumb']; ?></span>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($hero_data['titulo']) : ?>
+        <h1><?= $hero_data['titulo']; ?></h1>
+    <?php endif; ?>
+    
+    <?php if ($hero_data['descripcion']) : ?>
+        <p><?= $hero_data['descripcion']; ?></p>
+    <?php endif; ?>
+    
+    <?php $right_image = $hero_data['imagen_lateral'] 
+        ? $hero_data['imagen_lateral'] 
+        : 'https://vertisub.com/default.jpg'; ?>
+    <img src="<?= $right_image; ?>" alt="Hero Image">
+</section>
+```
+
+**Expected Field Structure:**
+```
+hero (Group)
+├── breadcrumb (Text)
+├── titulo (Text)
+├── descripcion (Textarea)
+└── imagen_lateral (Image)
+```
+
+### Image Fields
+
+Store and display images.
+
+```php
+// Single image
+<?php $hero_image = vertisub_get_acf_field('hero_image'); ?>
+<?php if ($hero_image) : ?>
+    <img src="<?= esc_url($hero_image['url']); ?>" 
+         alt="<?= esc_attr($hero_image['alt']); ?>">
+<?php endif; ?>
+
+// Image ID (for attachment)
+<?php $image_id = vertisub_get_acf_field('featured_image'); ?>
+<?php if ($image_id) : ?>
+    <?php echo wp_get_attachment_image($image_id, 'large'); ?>
+<?php endif; ?>
+```
+
+### Gallery Fields
+
+Multiple images in a gallery.
+
+```php
+// single.php:12-45
+<?php $galery = vertisub_get_acf_field('galeria'); ?>
+<?php if ($galery && is_array($galery)) : ?>
+    <div id="galeriaCarousel" class="carousel slide">
+        <div class="carousel-inner">
+            <?php foreach ($galery as $index => $img) :
+                $active = ($index === 0) ? 'active' : '';
+                $url = is_array($img) ? $img['url'] : wp_get_attachment_url($img);
+            ?>
+                <div class="carousel-item <?= esc_attr($active); ?>">
+                    <img src="<?= esc_url($url); ?>" alt="Gallery Image">
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+<?php endif; ?>
+```
+
+### True/False Fields
+
+Conditional display control.
+
+```php
+// templates/home-template.php:216-219
+<?php
+$mostrar_proyectos = vertisub_get_acf_field('mostrar_proyectos');
+$proyectos_data = vertisub_get_acf_field('proyectos');
+?>
+<?php if ($proyectos_data && $mostrar_proyectos) : ?>
+    <section id="work-section">
+        <!-- Project content -->
+    </section>
+<?php endif; ?>
+```
+
+### URL Fields
+
+Store links and external URLs.
+
+```php
+<?php $external_link = vertisub_get_acf_field('external_url'); ?>
+<?php if ($external_link) : ?>
+    <a href="<?= esc_url($external_link); ?>" target="_blank" rel="noopener">
+        Visit External Site
+    </a>
+<?php endif; ?>
+```
+
+### Relationship Fields
+
+Link to other posts/pages.
+
+```php
+<?php $related_posts = vertisub_get_acf_field('related_courses'); ?>
+<?php if ($related_posts) : ?>
+    <div class="related-courses">
+        <?php foreach ($related_posts as $post) : setup_postdata($post); ?>
+            <article>
+                <h3><?php the_title(); ?></h3>
+                <a href="<?php the_permalink(); ?>">View Course</a>
+            </article>
+        <?php endforeach; wp_reset_postdata(); ?>
+    </div>
+<?php endif; ?>
+```
+
+## Field Locations
+
+ACF fields can be assigned to different locations:
+
+### Page Templates
+
+Fields specific to page templates:
+
+```
+Location Rules:
+Page Template is equal to Home Template
+```
+
+Used in `templates/home-template.php`:
+- banners
+- soluciones
+- proyectos
+- novedades
+
+### Post Types
+
+Fields for custom post types:
+
+```
+Location Rules:
+Post Type is equal to Servicios
+```
+
+These fields appear in the CPT edit screen alongside native meta boxes.
+
+### Options Pages
+
+Global site settings:
+
+```php
+// Access options page fields
+$site_phone = vertisub_get_acf_field('contact_phone', true);
+$site_email = vertisub_get_acf_field('contact_email', true);
+```
+
+## Best Practices
+
+### 1. Always Check Field Existence
+
+```php
+<?php $hero_data = vertisub_get_acf_field('hero'); ?>
+<?php if ($hero_data) : ?>
+    <?php if (!empty($hero_data['titulo'])) : ?>
+        <h1><?= esc_html($hero_data['titulo']); ?></h1>
+    <?php endif; ?>
+<?php endif; ?>
+```
+
+### 2. Escape All Output
+
+```php
+// Text fields
+<?= esc_html($text_field); ?>
+
+// URLs
+<?= esc_url($url_field); ?>
+
+// Attributes
+<?= esc_attr($attribute); ?>
+
+// HTML content (use sparingly)
+<?= wp_kses_post($html_content); ?>
+```
+
+### 3. Provide Fallbacks
+
+```php
+<?php $image = $hero_data['imagen_lateral'] 
+    ? $hero_data['imagen_lateral'] 
+    : get_template_directory_uri() . '/assets/images/default.jpg'; ?>
+<img src="<?= esc_url($image); ?>" alt="Default Alt Text">
+```
+
+### 4. Use Descriptive Field Names
+
+**Good:**
+- `hero_background_image`
+- `course_enrollment_url`
+- `service_gallery_images`
+
+**Avoid:**
+- `image1`
+- `link`
+- `text`
+
+### 5. Group Related Fields
+
+```
+contact_section (Group)
+├── contact_title (Text)
+├── contact_subtitle (Text)
+├── contact_description (Textarea)
+└── contact_image (Image)
+```
+
+Instead of:
+```
+contact_title
+contact_subtitle
+contact_description
+contact_image
+```
+
+### 6. Document Complex Structures
+
+For repeaters with multiple subfields, add field instructions:
+
+```
+Field Instructions:
+"Add project information. Each project should include:
+- Title: Project name
+- Country: Project location
+- Image: Featured project image (1920x1080)
+- Description: Brief project overview (max 200 chars)"
+```
+
+## Common Patterns
+
+### Conditional Section Display
+
+```php
+<?php if (vertisub_get_acf_field('mostrar_hero')) : ?>
+    <?php $hero_data = vertisub_get_acf_field('hero'); ?>
+    <?php if ($hero_data) : ?>
+        <section class="hero">
+            <!-- Hero content -->
+        </section>
+    <?php endif; ?>
+<?php endif; ?>
+```
+
+### Nested Repeaters
+
+```php
+<?php $sections = vertisub_get_acf_field('content_sections'); ?>
+<?php if ($sections) : ?>
+    <?php foreach ($sections as $section) : ?>
+        <section>
+            <h2><?= esc_html($section['section_title']); ?></h2>
+            
+            <?php if (!empty($section['section_items'])) : ?>
+                <div class="items">
+                    <?php foreach ($section['section_items'] as $item) : ?>
+                        <div class="item">
+                            <h3><?= esc_html($item['item_title']); ?></h3>
+                            <p><?= esc_html($item['item_description']); ?></p>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </section>
+    <?php endforeach; ?>
+<?php endif; ?>
+```
+
+### Image with Fallback
+
+```php
+function get_hero_image() {
+    $hero_data = vertisub_get_acf_field('hero');
+    
+    if ($hero_data && !empty($hero_data['imagen_lateral'])) {
+        return $hero_data['imagen_lateral'];
+    }
+    
+    return get_template_directory_uri() . '/assets/images/default-hero.jpg';
+}
+
+<img src="<?= esc_url(get_hero_image()); ?>" alt="Hero Image">
+```
+
+## Troubleshooting
+
+### Fields Not Appearing
+
+1. **Check ACF is Active**: Verify Advanced Custom Fields plugin is installed and activated
+2. **Check Location Rules**: Ensure field group location rules match your page/template
+3. **Clear Cache**: Clear any caching plugins
+4. **Check JSON Sync**: Ensure `acf-json/` directory is writable (755 permissions)
+
+### Empty Field Values
+
+```php
+// Debug field value
+$field_value = vertisub_get_acf_field('my_field');
+var_dump($field_value);
+
+// Check if field exists in database
+$all_fields = get_fields();
+var_dump($all_fields);
+```
+
+### JSON Sync Issues
+
+1. **Make acf-json Writable**: `chmod 755 wp-content/themes/vertisubtheme/acf-json/`
+2. **Check JSON Files**: Verify JSON files exist and are valid
+3. **Force Sync**: Go to ACF > Sync Available and sync field groups
+
+## Advanced Techniques
+
+### Creating ACF Blocks
+
+For Gutenberg block editor integration:
+
+```php
+// functions.php or inc/blocks.php
+function register_acf_blocks() {
+    if (function_exists('acf_register_block_type')) {
+        acf_register_block_type(array(
+            'name'              => 'testimonial',
+            'title'             => 'Testimonial',
+            'description'       => 'A custom testimonial block.',
+            'render_template'   => 'blocks/testimonial.php',
+            'category'          => 'formatting',
+            'icon'              => 'admin-comments',
+            'keywords'          => array('testimonial', 'quote'),
+        ));
+    }
+}
+add_action('acf/init', 'register_acf_blocks');
+```
+
+### Dynamic Field Loading
+
+Load fields based on other field values:
+
+```php
+// Use ACF's conditional logic in field group settings
+// Or implement PHP logic:
+
+<?php $layout_type = vertisub_get_acf_field('layout_type'); ?>
+<?php if ($layout_type === 'full-width') : ?>
+    <?php $content = vertisub_get_acf_field('full_width_content'); ?>
+<?php elseif ($layout_type === 'two-column') : ?>
+    <?php $left_content = vertisub_get_acf_field('left_column'); ?>
+    <?php $right_content = vertisub_get_acf_field('right_column'); ?>
+<?php endif; ?>
+```
+
+## Related Documentation
+
+- [Theme Architecture](/concepts/architecture) - Overall theme structure
+- [Template System](/concepts/template-system) - Using ACF in templates
+- [Custom Post Types](/concepts/custom-post-types) - ACF fields for CPTs

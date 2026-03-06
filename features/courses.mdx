@@ -1,0 +1,380 @@
+---
+title: Course Management
+description: Comprehensive guide to creating and managing courses with multimedia content, instructors, and country-specific agreements
+---
+
+The Courses feature provides a complete system for managing educational offerings with images, videos, testimonials, curriculum, and multi-country agreements.
+
+## Overview
+
+Courses are implemented as a custom post type (`cursos`) with extensive metadata support:
+- Course images and introduction videos
+- Multiple learning modalities
+- Curriculum (syllabus) management
+- Instructor associations
+- Country-specific agreements with contact URLs
+- Custom partnership agreements
+- Multiple action URLs (enrollment, info, platform access)
+
+## Post Type Registration
+
+Courses are registered in `inc/cpts/courses.php:11-36`:
+
+```php
+function vertisub_create_cursos_post_type()
+{
+    register_post_type(
+        'cursos',
+        array(
+            'labels' => array(
+                'name'               => 'Cursos',
+                'singular_name'      => 'Curso',
+                'add_new'            => 'Añadir Nuevo',
+                'add_new_item'       => 'Añadir Nuevo Curso',
+                'edit_item'          => 'Editar Curso',
+                'new_item'           => 'Nuevo Curso',
+                'view_item'          => 'Ver Curso',
+                'search_items'       => 'Buscar Cursos',
+                'not_found'          => 'No se encontraron cursos',
+                'not_found_in_trash' => 'No hay cursos en la papelera',
+            ),
+            'public'      => true,
+            'has_archive' => false,
+            'menu_icon'   => 'dashicons-awards',
+            'supports'    => array('title', 'editor', 'thumbnail'),
+            'rewrite'     => array('slug' => 'cursos'),
+        )
+    );
+}
+add_action('init', 'vertisub_create_cursos_post_type');
+```
+
+## Meta Fields
+
+| Meta Key | Type | Description |
+|----------|------|-------------|
+| `_curso_imagenes` | array | Image attachment IDs |
+| `_curso_modalidades` | array | Learning modalities (online, presencial, etc.) |
+| `_curso_intro_video` | string | Introduction video URL |
+| `_curso_testimonios` | array | Testimonial video URLs |
+| `_curso_temario` | array | Curriculum topics |
+| `_curso_url_inscribir` | string | Enrollment URL |
+| `_curso_url_info` | string | More information URL |
+| `_curso_url_plataforma` | string | Learning platform URL |
+| `_curso_url_oficial` | string | Official course page URL |
+| `_curso_paises` | array | Associated country IDs |
+| `_curso_paises_urls` | array | Country-specific contact URLs |
+| `_curso_instructores` | array | Associated instructor IDs |
+| `_curso_convenios` | array | Custom partnership agreements |
+
+## Creating a Course
+
+### Basic Setup
+
+1. Navigate to **Cursos > Añadir Nuevo**
+2. Enter the course title
+3. Add a comprehensive description in the editor
+4. Set a featured image representing the course
+
+### Course Images
+
+The images section uses WordPress media library with attachment IDs:
+
+```javascript
+// Add image functionality
+$('.add-image').on('click', function(e) {
+    e.preventDefault();
+    var frame = wp.media({
+        title: 'Seleccionar Imagen',
+        button: { text: 'Usar Imagen' },
+        multiple: false
+    });
+    frame.on('select', function() {
+        var attachment = frame.state().get('selection').first().toJSON();
+        var html = '<div style="margin-bottom:10px;">' +
+            '<img src="' + attachment.url + '" style="max-width:150px;">' +
+            '<input type="hidden" name="curso_imagenes[]" value="' + attachment.id + '">' +
+            '<button class="remove-field button">Eliminar</button></div>';
+        $('#imagenes-wrapper').append(html);
+    });
+    frame.open();
+});
+```
+
+- Click **+ Añadir Imagen** to open media library
+- Select or upload images
+- Images display as thumbnails with remove buttons
+
+### Modalities
+
+Define how the course is delivered:
+
+```php
+<div id="modalidades-wrapper">
+    <?php if (!empty($modalidades)) :
+        foreach ($modalidades as $m) : ?>
+            <p><input type="text" name="curso_modalidades[]" 
+                      value="<?php echo esc_attr($m); ?>" style="width:80%;">
+                <button class="remove-field button">Eliminar</button>
+            </p>
+    <?php endforeach;
+    endif; ?>
+</div>
+<button type="button" class="add-field button">+ Añadir Modalidad</button>
+```
+
+Common modalities:
+- Online
+- Presencial
+- Híbrido
+- A tu propio ritmo
+- En vivo
+
+### Video Content
+
+#### Introduction Video
+Single URL field for the main course introduction:
+
+```php
+<input type="url" name="curso_intro_video" 
+       value="<?php echo esc_attr($intro_video); ?>" 
+       style="width:100%;">
+```
+
+#### Testimonial Videos
+Multiple video URLs from students or graduates:
+
+```php
+<div id="testimonios-wrapper">
+    <?php if (!empty($testimonios)) :
+        foreach ($testimonios as $t) : ?>
+            <p><input type="url" name="curso_testimonios[]" 
+                      value="<?php echo esc_attr($t); ?>" style="width:80%;">
+                <button class="remove-field button">Eliminar</button>
+            </p>
+    <?php endforeach;
+    endif; ?>
+</div>
+```
+
+### Curriculum (Temario)
+
+Add course topics that will be covered:
+
+```php
+<div id="temario-wrapper">
+    <?php if (!empty($temario)) :
+        foreach ($temario as $t) : ?>
+            <p><input type="text" name="curso_temario[]" 
+                      value="<?php echo esc_attr($t); ?>" style="width:80%;">
+                <button class="remove-field button">Eliminar</button>
+            </p>
+    <?php endforeach;
+    endif; ?>
+</div>
+```
+
+Example topics:
+- Introduction to Underwater Operations
+- Safety Protocols and Equipment
+- Welding Techniques at Depth
+- Emergency Procedures
+
+### Instructor Associations
+
+Link courses to instructor profiles:
+
+```php
+<?php foreach ($instructores_list as $inst) : ?>
+    <label>
+        <input type="checkbox" name="curso_instructores[]" 
+               value="<?php echo $inst->ID; ?>"
+               <?php checked(in_array($inst->ID, $instructores)); ?>>
+        <?php echo esc_html($inst->post_title); ?>
+    </label><br>
+<?php endforeach; ?>
+```
+
+### Country Agreements
+
+Associate courses with countries and provide contact URLs:
+
+```php
+<?php foreach ($paises_list as $pais) :
+    $url_contacto = isset($paises_urls[$pais->ID]) ? $paises_urls[$pais->ID] : ''; ?>
+    <p>
+        <label>
+            <input type="checkbox" name="curso_paises[]" 
+                   value="<?php echo $pais->ID; ?>"
+                   <?php checked(in_array($pais->ID, $paises)); ?>>
+            <?php echo esc_html($pais->post_title); ?>
+        </label><br>
+        URL de contacto:<br>
+        <input type="url" name="curso_paises_urls[<?php echo $pais->ID; ?>]" 
+               value="<?php echo esc_attr($url_contacto); ?>" style="width:80%;">
+    </p>
+<?php endforeach; ?>
+```
+
+### Custom Agreements
+
+Add partnerships that aren't country-specific:
+
+```php
+<div id="convenios-wrapper">
+    <?php if (!empty($convenios)) :
+        foreach ($convenios as $c) : ?>
+            <p>
+                <input type="text" name="curso_convenios[titulo][]" 
+                       value="<?php echo esc_attr($c['titulo']); ?>" 
+                       placeholder="Nombre del convenio" style="width:35%;">
+                <input type="url" name="curso_convenios[url][]" 
+                       value="<?php echo esc_attr($c['url']); ?>" 
+                       placeholder="URL del convenio" style="width:40%;">
+                <button class="remove-field button">Eliminar</button>
+            </p>
+    <?php endforeach;
+    endif; ?>
+</div>
+```
+
+Example agreements:
+- Partnership with Industry Association
+- Certification Body Agreement
+- Equipment Manufacturer Sponsorship
+
+### Action URLs
+
+Provide four key URLs for course actions:
+
+```php
+<p><label><strong>URL Inscripción:</strong></label><br>
+    <input type="url" name="curso_url_inscribir" 
+           value="<?php echo esc_attr($url_inscribir); ?>" style="width:100%;">
+</p>
+
+<p><label><strong>URL Más Información:</strong></label><br>
+    <input type="url" name="curso_url_info" 
+           value="<?php echo esc_attr($url_info); ?>" style="width:100%;">
+</p>
+
+<p><label><strong>URL Plataforma de Aprendizaje:</strong></label><br>
+    <input type="url" name="curso_url_plataforma" 
+           value="<?php echo esc_attr($url_plataforma); ?>" style="width:100%;">
+</p>
+
+<p><label><strong>URL Página Oficial:</strong></label><br>
+    <input type="url" name="curso_url_oficial" 
+           value="<?php echo esc_attr($url_oficial); ?>" style="width:100%;">
+</p>
+```
+
+## Saving Course Data
+
+The save function handles all meta fields with proper sanitization:
+
+```php
+function vertisub_save_cursos_metabox($post_id)
+{
+    if (!isset($_POST['cursos_nonce']) || 
+        !wp_verify_nonce($_POST['cursos_nonce'], basename(__FILE__))) 
+        return $post_id;
+    
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return $post_id;
+    if ('cursos' !== $_POST['post_type']) return $post_id;
+
+    update_post_meta($post_id, '_curso_imagenes', 
+        array_map('intval', (array) $_POST['curso_imagenes']));
+    update_post_meta($post_id, '_curso_modalidades', 
+        array_filter((array) $_POST['curso_modalidades']));
+    update_post_meta($post_id, '_curso_intro_video', 
+        sanitize_text_field($_POST['curso_intro_video']));
+    update_post_meta($post_id, '_curso_testimonios', 
+        array_filter((array) $_POST['curso_testimonios']));
+    update_post_meta($post_id, '_curso_temario', 
+        array_filter((array) $_POST['curso_temario']));
+    
+    // Save custom agreements
+    if (isset($_POST['curso_convenios'])) {
+        $convenios = [];
+        $titulos = $_POST['curso_convenios']['titulo'];
+        $urls    = $_POST['curso_convenios']['url'];
+        foreach ($titulos as $i => $titulo) {
+            if (!empty($titulo) || !empty($urls[$i])) {
+                $convenios[] = [
+                    'titulo' => sanitize_text_field($titulo),
+                    'url'    => esc_url_raw($urls[$i])
+                ];
+            }
+        }
+        update_post_meta($post_id, '_curso_convenios', $convenios);
+    }
+}
+add_action('save_post', 'vertisub_save_cursos_metabox');
+```
+
+## Retrieving Course Data
+
+### Display Course Images
+
+```php
+$imagenes = get_post_meta($course_id, '_curso_imagenes', true) ?: [];
+foreach ($imagenes as $img_id) {
+    $img_url = wp_get_attachment_url($img_id);
+    echo '<img src="' . esc_url($img_url) . '" alt="Course Image">';
+}
+```
+
+### Display Curriculum
+
+```php
+$temario = get_post_meta($course_id, '_curso_temario', true) ?: [];
+echo '<ul class="course-curriculum">';
+foreach ($temario as $topic) {
+    echo '<li>' . esc_html($topic) . '</li>';
+}
+echo '</ul>';
+```
+
+### Display Country Agreements
+
+```php
+$paises = get_post_meta($course_id, '_curso_paises', true) ?: [];
+$paises_urls = get_post_meta($course_id, '_curso_paises_urls', true) ?: [];
+
+foreach ($paises as $pais_id) {
+    $pais = get_post($pais_id);
+    $contact_url = isset($paises_urls[$pais_id]) ? $paises_urls[$pais_id] : '';
+    
+    echo '<div class="country-agreement">';
+    echo '<h4>' . esc_html($pais->post_title) . '</h4>';
+    if ($contact_url) {
+        echo '<a href="' . esc_url($contact_url) . '">Contactar</a>';
+    }
+    echo '</div>';
+}
+```
+
+## Best Practices
+
+1. **Comprehensive Curriculum**: List all major topics to set clear expectations
+2. **Quality Videos**: Use high-quality introduction and testimonial videos
+3. **Clear Modalities**: Specify exactly how students will learn
+4. **Complete URLs**: Provide all relevant action URLs for smooth user experience
+5. **Country Specifics**: Add country-specific contact URLs for localized support
+6. **Instructor Credits**: Always link to instructor profiles for credibility
+7. **Regular Updates**: Keep curriculum and modalities current
+
+## Workflow Example
+
+1. Create course: "Commercial Diving Operations"
+2. Add detailed description covering prerequisites and outcomes
+3. Upload 5 course images showing equipment and training
+4. Add YouTube intro video
+5. Add 2-3 testimonial videos from graduates
+6. List curriculum: 8-10 major topics
+7. Add modalities: "Presencial" and "Intensivo"
+8. Associate with 2 instructors
+9. Link to 4 countries with contact URLs
+10. Add enrollment and platform URLs
+11. Publish and verify display on courses page

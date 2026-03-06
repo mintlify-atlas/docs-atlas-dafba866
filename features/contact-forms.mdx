@@ -1,0 +1,587 @@
+---
+title: AJAX Contact Forms
+description: Implementing and managing AJAX-powered contact forms with WordPress in VertiSub CMS
+---
+
+The VertiSub CMS includes a built-in AJAX contact form system that allows users to submit inquiries without page reloads, providing a smooth user experience with real-time feedback.
+
+## Overview
+
+The contact form system features:
+- AJAX submission without page reload
+- WordPress nonce security
+- Server-side data sanitization
+- Email delivery to admin
+- JSON success/error responses
+- Works for both logged-in and guest users
+
+## Server-Side Implementation
+
+### Contact Form Handler
+
+Implemented in `inc/utils.php:11-36`:
+
+```php
+/**
+ * Handles contact form submission via AJAX.
+ *
+ * Verifies nonce, sanitizes form data, and sends email to admin.
+ *
+ * @since 1.0.0
+ */
+function sancho_handle_contact_form()
+{
+    // Verify nonce
+    if (!wp_verify_nonce($_POST['nonce'], 'sancho_nonce')) {
+        wp_die('Security check failed');
+    }
+
+    // Sanitize form data
+    $name = sanitize_text_field($_POST['name']);
+    $email = sanitize_email($_POST['email']);
+    $message = sanitize_textarea_field($_POST['message']);
+
+    // Send email (customize as needed)
+    $to = get_option('admin_email');
+    $subject = 'New Contact Form Submission';
+    $body = "Name: $name\nEmail: $email\nMessage: $message";
+    $headers = array('Content-Type: text/html; charset=UTF-8');
+
+    if (wp_mail($to, $subject, $body, $headers)) {
+        wp_send_json_success('Message sent successfully!');
+    } else {
+        wp_send_json_error('Failed to send message.');
+    }
+}
+add_action('wp_ajax_sancho_contact', 'sancho_handle_contact_form');
+add_action('wp_ajax_nopriv_sancho_contact', 'sancho_handle_contact_form');
+```
+
+### WordPress AJAX Actions
+
+Two hooks are registered:
+
+1. **`wp_ajax_sancho_contact`**: For logged-in users
+2. **`wp_ajax_nopriv_sancho_contact`**: For non-logged-in users (public access)
+
+## JavaScript Integration
+
+### Localized AJAX Data
+
+The AJAX URL and nonce are passed to JavaScript in `inc/enqueue.php:112-116`:
+
+```php
+// Localize script for AJAX
+wp_localize_script('sancho-script', 'sancho_ajax', array(
+    'ajax_url' => admin_url('admin-ajax.php'),
+    'nonce'    => wp_create_nonce('sancho_nonce'),
+));
+```
+
+This makes `sancho_ajax` object available in JavaScript with:
+- `sancho_ajax.ajax_url`: WordPress AJAX endpoint
+- `sancho_ajax.nonce`: Security nonce for verification
+
+### Frontend JavaScript
+
+Example AJAX form submission:
+
+```javascript
+jQuery(document).ready(function($) {
+    $('#contact-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = {
+            action: 'sancho_contact',
+            nonce: sancho_ajax.nonce,
+            name: $('#contact-name').val(),
+            email: $('#contact-email').val(),
+            message: $('#contact-message').val()
+        };
+        
+        // Show loading state
+        var submitBtn = $(this).find('button[type="submit"]');
+        var originalText = submitBtn.text();
+        submitBtn.text('Enviando...').prop('disabled', true);
+        
+        $.ajax({
+            url: sancho_ajax.ajax_url,
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    // Show success message
+                    $('#form-message').html(
+                        '<div class="alert alert-success">' + 
+                        response.data + 
+                        '</div>'
+                    );
+                    // Reset form
+                    $('#contact-form')[0].reset();
+                } else {
+                    // Show error message
+                    $('#form-message').html(
+                        '<div class="alert alert-danger">' + 
+                        response.data + 
+                        '</div>'
+                    );
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#form-message').html(
+                    '<div class="alert alert-danger">' + 
+                    'An error occurred. Please try again.' + 
+                    '</div>'
+                );
+            },
+            complete: function() {
+                // Restore button state
+                submitBtn.text(originalText).prop('disabled', false);
+            }
+        });
+    });
+});
+```
+
+## HTML Form Structure
+
+### Basic Contact Form
+
+```html
+<form id="contact-form" class="contact-form">
+    <div class="form-group">
+        <label for="contact-name">Nombre</label>
+        <input type="text" 
+               id="contact-name" 
+               name="name" 
+               class="form-control" 
+               required>
+    </div>
+    
+    <div class="form-group">
+        <label for="contact-email">Email</label>
+        <input type="email" 
+               id="contact-email" 
+               name="email" 
+               class="form-control" 
+               required>
+    </div>
+    
+    <div class="form-group">
+        <label for="contact-message">Mensaje</label>
+        <textarea id="contact-message" 
+                  name="message" 
+                  class="form-control" 
+                  rows="5" 
+                  required></textarea>
+    </div>
+    
+    <div id="form-message"></div>
+    
+    <button type="submit" class="btn btn-primary">
+        Enviar Mensaje
+    </button>
+</form>
+```
+
+### Enhanced Form with Validation
+
+```html
+<form id="contact-form" class="contact-form" novalidate>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="contact-name">Nombre *</label>
+                <input type="text" 
+                       id="contact-name" 
+                       name="name" 
+                       class="form-control" 
+                       required
+                       minlength="2"
+                       maxlength="100">
+                <div class="invalid-feedback">
+                    Por favor ingrese su nombre.
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="contact-email">Email *</label>
+                <input type="email" 
+                       id="contact-email" 
+                       name="email" 
+                       class="form-control" 
+                       required
+                       pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
+                <div class="invalid-feedback">
+                    Por favor ingrese un email válido.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="contact-phone">Teléfono</label>
+        <input type="tel" 
+               id="contact-phone" 
+               name="phone" 
+               class="form-control">
+    </div>
+    
+    <div class="form-group">
+        <label for="contact-subject">Asunto *</label>
+        <input type="text" 
+               id="contact-subject" 
+               name="subject" 
+               class="form-control" 
+               required>
+    </div>
+    
+    <div class="form-group">
+        <label for="contact-message">Mensaje *</label>
+        <textarea id="contact-message" 
+                  name="message" 
+                  class="form-control" 
+                  rows="6" 
+                  required
+                  minlength="10"></textarea>
+        <div class="invalid-feedback">
+            Por favor ingrese un mensaje de al menos 10 caracteres.
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <div class="form-check">
+            <input type="checkbox" 
+                   class="form-check-input" 
+                   id="privacy-policy" 
+                   required>
+            <label class="form-check-label" for="privacy-policy">
+                Acepto la <a href="https://example.com/privacy-policy/" target="_blank">política de privacidad</a>
+            </label>
+        </div>
+    </div>
+    
+    <div id="form-message" class="mb-3"></div>
+    
+    <button type="submit" class="btn btn-primary btn-lg">
+        <i class="fas fa-paper-plane"></i> Enviar Mensaje
+    </button>
+</form>
+```
+
+## Enhanced JavaScript with Validation
+
+```javascript
+jQuery(document).ready(function($) {
+    var $form = $('#contact-form');
+    var $message = $('#form-message');
+    var $submitBtn = $form.find('button[type="submit"]');
+    
+    // Client-side validation
+    $form.on('submit', function(e) {
+        e.preventDefault();
+        
+        // Remove previous validation states
+        $form.find('.is-invalid').removeClass('is-invalid');
+        $message.html('');
+        
+        // Check HTML5 validation
+        if (!this.checkValidity()) {
+            this.classList.add('was-validated');
+            return false;
+        }
+        
+        // Prepare form data
+        var formData = {
+            action: 'sancho_contact',
+            nonce: sancho_ajax.nonce,
+            name: $('#contact-name').val().trim(),
+            email: $('#contact-email').val().trim(),
+            phone: $('#contact-phone').val().trim(),
+            subject: $('#contact-subject').val().trim(),
+            message: $('#contact-message').val().trim()
+        };
+        
+        // Show loading state
+        var originalText = $submitBtn.html();
+        $submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Enviando...')
+                  .prop('disabled', true);
+        
+        // Submit via AJAX
+        $.ajax({
+            url: sancho_ajax.ajax_url,
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    $message.html(
+                        '<div class="alert alert-success alert-dismissible fade show">' +
+                        '<i class="fas fa-check-circle"></i> ' + response.data +
+                        '<button type="button" class="close" data-dismiss="alert">' +
+                        '<span>&times;</span></button></div>'
+                    );
+                    // Reset form
+                    $form[0].reset();
+                    $form.removeClass('was-validated');
+                    
+                    // Scroll to message
+                    $('html, body').animate({
+                        scrollTop: $message.offset().top - 100
+                    }, 500);
+                } else {
+                    $message.html(
+                        '<div class="alert alert-danger alert-dismissible fade show">' +
+                        '<i class="fas fa-exclamation-triangle"></i> ' + response.data +
+                        '<button type="button" class="close" data-dismiss="alert">' +
+                        '<span>&times;</span></button></div>'
+                    );
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', error);
+                $message.html(
+                    '<div class="alert alert-danger alert-dismissible fade show">' +
+                    '<i class="fas fa-times-circle"></i> ' +
+                    'Ocurrió un error al enviar el mensaje. Por favor intente nuevamente.' +
+                    '<button type="button" class="close" data-dismiss="alert">' +
+                    '<span>&times;</span></button></div>'
+                );
+            },
+            complete: function() {
+                // Restore button
+                $submitBtn.html(originalText).prop('disabled', false);
+            }
+        });
+    });
+    
+    // Auto-dismiss success messages after 5 seconds
+    $(document).on('shown.bs.alert', '.alert-success', function() {
+        var $alert = $(this);
+        setTimeout(function() {
+            $alert.fadeOut(400, function() {
+                $(this).remove();
+            });
+        }, 5000);
+    });
+});
+```
+
+## Customizing Email Output
+
+### HTML Email Template
+
+```php
+function sancho_handle_contact_form()
+{
+    // Verify nonce
+    if (!wp_verify_nonce($_POST['nonce'], 'sancho_nonce')) {
+        wp_die('Security check failed');
+    }
+
+    // Sanitize form data
+    $name = sanitize_text_field($_POST['name']);
+    $email = sanitize_email($_POST['email']);
+    $phone = sanitize_text_field($_POST['phone'] ?? '');
+    $subject = sanitize_text_field($_POST['subject'] ?? 'Contact Form Submission');
+    $message = sanitize_textarea_field($_POST['message']);
+
+    // Build HTML email
+    $to = get_option('admin_email');
+    $email_subject = 'Nuevo Mensaje de Contacto: ' . $subject;
+    
+    $body = '
+    <html>
+    <head>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #007bff; color: white; padding: 20px; text-align: center; }
+            .content { background: #f8f9fa; padding: 20px; }
+            .field { margin-bottom: 15px; }
+            .label { font-weight: bold; color: #333; }
+            .value { color: #666; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2>Nuevo Mensaje de Contacto</h2>
+            </div>
+            <div class="content">
+                <div class="field">
+                    <div class="label">Nombre:</div>
+                    <div class="value">' . esc_html($name) . '</div>
+                </div>
+                <div class="field">
+                    <div class="label">Email:</div>
+                    <div class="value"><a href="mailto:' . esc_attr($email) . '">' . esc_html($email) . '</a></div>
+                </div>';
+    
+    if ($phone) {
+        $body .= '
+                <div class="field">
+                    <div class="label">Teléfono:</div>
+                    <div class="value">' . esc_html($phone) . '</div>
+                </div>';
+    }
+    
+    $body .= '
+                <div class="field">
+                    <div class="label">Asunto:</div>
+                    <div class="value">' . esc_html($subject) . '</div>
+                </div>
+                <div class="field">
+                    <div class="label">Mensaje:</div>
+                    <div class="value">' . nl2br(esc_html($message)) . '</div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>';
+    
+    $headers = array(
+        'Content-Type: text/html; charset=UTF-8',
+        'From: ' . get_bloginfo('name') . ' <noreply@' . parse_url(home_url(), PHP_URL_HOST) . '>',
+        'Reply-To: ' . $name . ' <' . $email . '>'
+    );
+
+    if (wp_mail($to, $email_subject, $body, $headers)) {
+        wp_send_json_success('¡Mensaje enviado correctamente! Le responderemos pronto.');
+    } else {
+        wp_send_json_error('No se pudo enviar el mensaje. Por favor intente nuevamente.');
+    }
+}
+```
+
+### Multiple Recipients
+
+```php
+// Send to multiple addresses
+$to = array(
+    get_option('admin_email'),
+    'sales@example.com',
+    'support@example.com'
+);
+
+wp_mail($to, $subject, $body, $headers);
+```
+
+### CC and BCC
+
+```php
+$headers = array(
+    'Content-Type: text/html; charset=UTF-8',
+    'Cc: manager@example.com',
+    'Bcc: archive@example.com'
+);
+```
+
+## Security Best Practices
+
+### 1. Nonce Verification
+Always verify nonces to prevent CSRF attacks:
+
+```php
+if (!wp_verify_nonce($_POST['nonce'], 'sancho_nonce')) {
+    wp_send_json_error('Security check failed');
+    wp_die();
+}
+```
+
+### 2. Data Sanitization
+Sanitize all input data:
+
+```php
+$name = sanitize_text_field($_POST['name']);
+$email = sanitize_email($_POST['email']);
+$message = sanitize_textarea_field($_POST['message']);
+$url = esc_url_raw($_POST['url']);
+```
+
+### 3. Rate Limiting
+Prevent spam with rate limiting:
+
+```php
+function sancho_handle_contact_form()
+{
+    // Check rate limit
+    $ip = $_SERVER['REMOTE_ADDR'];
+    $transient_key = 'contact_form_' . md5($ip);
+    
+    if (get_transient($transient_key)) {
+        wp_send_json_error('Por favor espere antes de enviar otro mensaje.');
+        wp_die();
+    }
+    
+    // Set rate limit (5 minutes)
+    set_transient($transient_key, true, 5 * MINUTE_IN_SECONDS);
+    
+    // ... rest of the code
+}
+```
+
+### 4. Honeypot Field
+Add hidden field to catch bots:
+
+```html
+<!-- Hidden field (don't display with CSS) -->
+<input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off">
+```
+
+```php
+// Check honeypot
+if (!empty($_POST['website'])) {
+    wp_send_json_error('Spam detected');
+    wp_die();
+}
+```
+
+## Troubleshooting
+
+### Emails Not Sending
+
+1. **Check server email configuration**:
+```php
+// Test email
+wp_mail('test@example.com', 'Test Subject', 'Test message');
+```
+
+2. **Use SMTP plugin**: Install WP Mail SMTP for better deliverability
+
+3. **Check spam folders**: Verify emails aren't marked as spam
+
+### AJAX Errors
+
+1. **Check console for JavaScript errors**
+2. **Verify nonce is being passed correctly**
+3. **Ensure AJAX URL is correct**: Should be `/wp-admin/admin-ajax.php`
+4. **Check server error logs** for PHP errors
+
+## Best Practices
+
+1. **Always sanitize input** on the server side
+2. **Verify nonces** for security
+3. **Provide clear feedback** to users
+4. **Use HTML5 validation** for better UX
+5. **Implement rate limiting** to prevent spam
+6. **Send confirmation emails** to users
+7. **Log submissions** for auditing
+8. **Test on mobile devices**
+9. **Make forms accessible** (proper labels, ARIA attributes)
+10. **Monitor submission success rates**
+
+## Workflow Example
+
+1. Create contact page with form HTML
+2. Include jQuery and form validation script
+3. Test form submission and verify email receipt
+4. Customize email template with branding
+5. Add honeypot field for bot protection
+6. Implement rate limiting
+7. Test on multiple browsers and devices
+8. Monitor form submissions in first week
+9. Adjust validation rules based on user feedback
+10. Set up email notifications for new submissions

@@ -1,0 +1,225 @@
+---
+title: Services Management
+description: Complete guide to managing services with multimedia support and country associations in VertiSub CMS
+---
+
+The Services feature allows you to create and manage service offerings with rich multimedia content, country-specific availability, and detailed descriptions.
+
+## Overview
+
+Services are implemented as a custom post type (`servicios`) that supports:
+- Title and featured image
+- Rich text editor for descriptions
+- Multiple images, videos, and video URLs
+- Country/region associations
+
+## Post Type Registration
+
+The services post type is registered in `inc/cpts/services.php:10-36`:
+
+```php
+function vertisub_create_servicios_post_type()
+{
+    register_post_type(
+        'servicios',
+        array(
+            'labels' => array(
+                'name'               => 'Servicios',
+                'singular_name'      => 'Servicio',
+                'add_new'            => 'Añadir servicio',
+                'add_new_item'       => 'Añadir servicio',
+                'edit_item'          => 'Editar servicio',
+                'new_item'           => 'Nuevo servicio',
+                'view_item'          => 'Ver servicio',
+                'search_items'       => 'Buscar servicios',
+                'not_found'          => 'No se encontraron servicios',
+                'not_found_in_trash' => 'No hay servicios en la papelera',
+            ),
+            'public'      => true,
+            'has_archive' => false,
+            'menu_icon'   => 'dashicons-hammer',
+            'supports'    => array('title', 'thumbnail', 'editor'),
+            'rewrite'     => array('slug' => 'servicios'),
+        )
+    );
+}
+add_action('init', 'vertisub_create_servicios_post_type');
+```
+
+## Meta Fields
+
+Services support the following custom meta fields:
+
+| Meta Key | Type | Description |
+|----------|------|-------------|
+| `_imagenes_reseña` | array | URLs of uploaded images |
+| `_videos_reseña` | array | URLs of uploaded video files |
+| `_video_urls_reseña` | array | External video URLs (YouTube/Vimeo) |
+| `_servicio_paises` | array | Associated country IDs |
+
+## Creating a Service
+
+### Basic Information
+
+1. Navigate to **Servicios > Añadir Nuevo** in the WordPress admin
+2. Enter the service title
+3. Add a detailed description using the editor
+4. Set a featured image (thumbnail)
+
+### Adding Multimedia
+
+The Multimedia meta box provides three sections:
+
+#### Images
+```php
+// Example: Add image field
+<input type="text" name="imagenes_reseña[]" style="width:80%;">
+<button class="button upload_image_button">Subir</button>
+```
+
+- Click **+ Agregar Imagen** to add a new image field
+- Click **Subir** to open the WordPress media library
+- Select an image and click **Usar esta imagen**
+- Repeat for multiple images
+
+#### Video Files
+- Click **+ Agregar Video** to add a video file field
+- Upload video files directly from your computer
+- Supports standard video formats (MP4, WebM, etc.)
+
+#### Video URLs
+- Click **+ Agregar Link** to add an external video URL field
+- Paste YouTube or Vimeo URLs
+- These are rendered as embedded players on the frontend
+
+### Associating Countries
+
+The Países meta box (sidebar) allows you to associate services with specific countries:
+
+```php
+function vertisub_servicios_paises_callback($post)
+{
+    $paises = get_posts(array(
+        'post_type'      => 'paises',
+        'posts_per_page' => -1,
+        'orderby'        => 'title',
+        'order'          => 'ASC'
+    ));
+
+    $selected = get_post_meta($post->ID, '_servicio_paises', true);
+    if (!is_array($selected)) $selected = array();
+
+    echo '<select name="servicio_paises[]" multiple style="width:100%;height:150px;">';
+    foreach ($paises as $pais) {
+        $is_selected = in_array($pais->ID, $selected) ? 'selected' : '';
+        echo '<option value="' . $pais->ID . '" ' . $is_selected . '>' . esc_html($pais->post_title) . '</option>';
+    }
+    echo '</select>';
+}
+```
+
+- Hold Ctrl (Windows) or Cmd (Mac) to select multiple countries
+- Services can be filtered by country on the frontend
+
+## Saving Data
+
+Data is automatically saved using WordPress hooks:
+
+```php
+function vertisub_save_multimedia_meta($post_id)
+{
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+
+    // Save images
+    $imagenes = isset($_POST['imagenes_reseña']) 
+        ? array_filter(array_map('esc_url_raw', $_POST['imagenes_reseña'])) 
+        : [];
+    update_post_meta($post_id, '_imagenes_reseña', $imagenes);
+
+    // Save videos
+    $videos = isset($_POST['videos_reseña']) 
+        ? array_filter(array_map('esc_url_raw', $_POST['videos_reseña'])) 
+        : [];
+    update_post_meta($post_id, '_videos_reseña', $videos);
+
+    // Save video URLs
+    $urls = isset($_POST['video_urls_reseña']) 
+        ? array_filter(array_map('esc_url_raw', $_POST['video_urls_reseña'])) 
+        : [];
+    update_post_meta($post_id, '_video_urls_reseña', $urls);
+}
+add_action('save_post', 'vertisub_save_multimedia_meta');
+```
+
+## Retrieving Service Data
+
+### Get Service Multimedia
+
+```php
+// Get all images
+$imagenes = get_post_meta($service_id, '_imagenes_reseña', true);
+if (!is_array($imagenes)) $imagenes = [];
+
+foreach ($imagenes as $img_url) {
+    echo '<img src="' . esc_url($img_url) . '" alt="Service Image">';
+}
+
+// Get video URLs
+$video_urls = get_post_meta($service_id, '_video_urls_reseña', true);
+if (!is_array($video_urls)) $video_urls = [];
+
+foreach ($video_urls as $url) {
+    // Render video embed
+    echo wp_oembed_get($url);
+}
+```
+
+### Get Associated Countries
+
+```php
+$paises_ids = get_post_meta($service_id, '_servicio_paises', true);
+if (!is_array($paises_ids)) $paises_ids = [];
+
+foreach ($paises_ids as $pais_id) {
+    $pais = get_post($pais_id);
+    echo '<span>' . esc_html($pais->post_title) . '</span>';
+}
+```
+
+## URL Structure
+
+Services use a custom rewrite rule for country-filtered views:
+
+```php
+function vertisub_rewrite_rules()
+{
+    add_rewrite_rule(
+        '^servicios-vertisub/([^/]+)/?$',
+        'index.php?pagename=servicios-vertisub&pais_slug=$matches[1]',
+        'top'
+    );
+}
+add_action('init', 'vertisub_rewrite_rules');
+```
+
+This allows URLs like:
+- `/servicios-vertisub/colombia/` - Services available in Colombia
+- `/servicios-vertisub/mexico/` - Services available in Mexico
+
+## Best Practices
+
+1. **Image Optimization**: Compress images before uploading to improve page load times
+2. **Video Strategy**: Use external URLs (YouTube/Vimeo) for long videos to save server bandwidth
+3. **Country Association**: Always associate services with relevant countries for proper filtering
+4. **Descriptive Titles**: Use clear, descriptive titles that explain the service offering
+5. **Featured Images**: Always set a featured image for consistent display in listings
+
+## Workflow Example
+
+1. Create a new service: "Underwater Welding Training"
+2. Add description explaining the training program
+3. Upload 3-5 images showing training facilities and equipment
+4. Add a YouTube URL with promotional video
+5. Associate with countries where training is available
+6. Set a featured image showing welding in action
+7. Publish and verify the service appears on the services page

@@ -1,0 +1,512 @@
+---
+title: Media Management
+description: Comprehensive guide to handling images, videos, and multimedia content in VertiSub CMS
+---
+
+The Media Management system in VertiSub CMS provides powerful tools for uploading, organizing, and displaying images, videos, and external media URLs across different content types.
+
+## Overview
+
+Media management is integrated into multiple custom post types:
+- **Services**: Images, video files, and video URLs
+- **Courses**: Image galleries with attachment IDs
+- **About Us**: Main images and videos with statistics
+
+All media handling uses WordPress native media library with custom upload buttons and JavaScript integration.
+
+## Media Types Supported
+
+### Images
+- WordPress Media Library integration
+- Direct URL storage or attachment ID storage
+- Thumbnail previews in admin
+- Multiple images per post
+- Drag-and-drop upload support
+
+### Video Files
+- Upload directly to WordPress Media Library
+- Support for MP4, WebM, and other formats
+- Stored as media library URLs
+- Server bandwidth considerations
+
+### Video URLs
+- External video hosting (YouTube, Vimeo)
+- oEmbed automatic embedding
+- No server storage required
+- Unlimited video linking
+
+## Services Multimedia System
+
+### Implementation
+
+The services multimedia meta box (`inc/cpts/services.php:62-180`):
+
+```php
+function vertisub_servicios_multimedia_callback($post)
+{
+    $imagenes    = get_post_meta($post->ID, '_imagenes_reseña', true);
+    $videos      = get_post_meta($post->ID, '_videos_reseña', true);
+    $video_urls  = get_post_meta($post->ID, '_video_urls_reseña', true);
+
+    if (!is_array($imagenes)) $imagenes = [];
+    if (!is_array($videos)) $videos = [];
+    if (!is_array($video_urls)) $video_urls = [];
+    ?>
+
+    <h4>📷 Imágenes</h4>
+    <div id="imagenes-wrapper">
+        <?php foreach ($imagenes as $i => $img): ?>
+            <p>
+                <input type="text" name="imagenes_reseña[]" 
+                       value="<?php echo esc_attr($img); ?>" style="width:80%;">
+                <button class="button upload_image_button">Subir</button>
+                <button class="button remove-field">Eliminar</button>
+            </p>
+        <?php endforeach; ?>
+    </div>
+    <button class="button add-image">+ Agregar Imagen</button>
+
+    <hr>
+    <h4>🎥 Videos (archivos)</h4>
+    <div id="videos-wrapper">
+        <?php foreach ($videos as $v): ?>
+            <p>
+                <input type="text" name="videos_reseña[]" 
+                       value="<?php echo esc_attr($v); ?>" style="width:80%;">
+                <button class="button upload_video_button">Subir</button>
+                <button class="button remove-field">Eliminar</button>
+            </p>
+        <?php endforeach; ?>
+    </div>
+    <button class="button add-video">+ Agregar Video</button>
+
+    <hr>
+    <h4>🌐 Links de Video (YouTube/Vimeo)</h4>
+    <div id="urls-wrapper">
+        <?php foreach ($video_urls as $url): ?>
+            <p>
+                <input type="url" name="video_urls_reseña[]" 
+                       value="<?php echo esc_attr($url); ?>" style="width:80%;">
+                <button class="button remove-field">Eliminar</button>
+            </p>
+        <?php endforeach; ?>
+    </div>
+    <button class="button add-url">+ Agregar Link</button>
+    <?php
+}
+```
+
+### JavaScript Media Upload
+
+```javascript
+jQuery(document).ready(function($) {
+    // Add field buttons
+    $('.add-image').click(function(e) {
+        e.preventDefault();
+        $('#imagenes-wrapper').append(
+            '<p><input type="text" name="imagenes_reseña[]" style="width:80%;"> ' +
+            '<button class="button upload_image_button">Subir</button> ' +
+            '<button class="button remove-field">Eliminar</button></p>'
+        );
+    });
+
+    // Image uploader
+    $(document).on('click', '.upload_image_button', function(e) {
+        e.preventDefault();
+        var button = $(this);
+        var uploader = wp.media({
+            title: 'Selecciona una imagen',
+            button: { text: 'Usar esta imagen' },
+            library: { type: 'image' },
+            multiple: false
+        }).on('select', function() {
+            var attachment = uploader.state().get('selection').first().toJSON();
+            button.prev('input').val(attachment.url);
+        }).open();
+    });
+
+    // Video uploader
+    $(document).on('click', '.upload_video_button', function(e) {
+        e.preventDefault();
+        var button = $(this);
+        var uploader = wp.media({
+            title: 'Selecciona un video',
+            button: { text: 'Usar este video' },
+            library: { type: 'video' },
+            multiple: false
+        }).on('select', function() {
+            var attachment = uploader.state().get('selection').first().toJSON();
+            button.prev('input').val(attachment.url);
+        }).open();
+    });
+
+    // Remove field
+    $(document).on('click', '.remove-field', function(e) {
+        e.preventDefault();
+        $(this).parent('p').remove();
+    });
+});
+```
+
+### Saving Media Data
+
+```php
+function vertisub_save_multimedia_meta($post_id)
+{
+    // Avoid autosave
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+
+    // Save images
+    $imagenes = isset($_POST['imagenes_reseña']) 
+        ? array_filter(array_map('esc_url_raw', $_POST['imagenes_reseña'])) 
+        : [];
+    update_post_meta($post_id, '_imagenes_reseña', $imagenes);
+
+    // Save videos
+    $videos = isset($_POST['videos_reseña']) 
+        ? array_filter(array_map('esc_url_raw', $_POST['videos_reseña'])) 
+        : [];
+    update_post_meta($post_id, '_videos_reseña', $videos);
+
+    // Save video URLs
+    $urls = isset($_POST['video_urls_reseña']) 
+        ? array_filter(array_map('esc_url_raw', $_POST['video_urls_reseña'])) 
+        : [];
+    update_post_meta($post_id, '_video_urls_reseña', $urls);
+}
+add_action('save_post', 'vertisub_save_multimedia_meta');
+```
+
+## Courses Media System
+
+### Image Gallery with Attachment IDs
+
+Courses store attachment IDs instead of URLs for better integration:
+
+```php
+function vertisub_cursos_callback($post)
+{
+    $imagenes = get_post_meta($post->ID, '_curso_imagenes', true) ?: [];
+    ?>
+    <h3>Imágenes del Curso</h3>
+    <div id="imagenes-wrapper">
+        <?php if (!empty($imagenes)) :
+            foreach ($imagenes as $img_id) :
+                $img_url = wp_get_attachment_url($img_id); ?>
+                <div style="margin-bottom:10px;">
+                    <img src="<?php echo esc_url($img_url); ?>" 
+                         style="max-width:150px; display:block; margin-bottom:5px;">
+                    <input type="hidden" name="curso_imagenes[]" 
+                           value="<?php echo esc_attr($img_id); ?>">
+                    <button class="remove-field button">Eliminar</button>
+                </div>
+        <?php endforeach;
+        endif; ?>
+    </div>
+    <button type="button" class="button add-image">+ Añadir Imagen</button>
+    <?php
+}
+```
+
+### JavaScript for Attachment IDs
+
+```javascript
+var frame;
+$('.add-image').on('click', function(e) {
+    e.preventDefault();
+    if (frame) frame.close();
+    
+    frame = wp.media({
+        title: 'Seleccionar Imagen',
+        button: { text: 'Usar Imagen' },
+        multiple: false
+    });
+    
+    frame.on('select', function() {
+        var attachment = frame.state().get('selection').first().toJSON();
+        var html = '<div style="margin-bottom:10px;">' +
+            '<img src="' + attachment.url + '" style="max-width:150px;">' +
+            '<input type="hidden" name="curso_imagenes[]" value="' + attachment.id + '">' +
+            '<button class="remove-field button">Eliminar</button></div>';
+        $('#imagenes-wrapper').append(html);
+    });
+    
+    frame.open();
+});
+```
+
+### Saving Attachment IDs
+
+```php
+function vertisub_save_cursos_metabox($post_id)
+{
+    // ... validation ...
+    
+    update_post_meta($post_id, '_curso_imagenes', 
+        array_map('intval', (array) $_POST['curso_imagenes']));
+}
+add_action('save_post', 'vertisub_save_cursos_metabox');
+```
+
+## About Us Media System
+
+### Custom Meta Fields
+
+The About Us page supports custom media fields (`inc/utils.php:49-71`):
+
+```php
+function vertisub_save_about_extra($post_id)
+{
+    if (!isset($_POST['vertisub_about_extra_nonce']) || 
+        !wp_verify_nonce($_POST['vertisub_about_extra_nonce'], 'vertisub_save_about_extra')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
+
+    if (isset($_POST['about_extra']) && is_array($_POST['about_extra'])) {
+        $clean = [];
+        foreach ($_POST['about_extra'] as $key => $value) {
+            if (in_array($key, array('main_image', 'main_video'))) {
+                $clean[$key] = esc_url_raw($value);
+            } elseif (in_array($key, array('years', 'projects', 'clients'))) {
+                $clean[$key] = $value === '' ? '' : intval($value);
+            } else {
+                $clean[$key] = wp_kses_post($value);
+            }
+        }
+        update_post_meta($post_id, '_about_extra', $clean);
+    }
+}
+add_action('save_post', 'vertisub_save_about_extra');
+```
+
+### Admin Assets for Media Upload
+
+```php
+function vertisub_admin_assets($hook)
+{
+    if (!is_admin()) return;
+    $screen = get_current_screen();
+    if (!$screen || $screen->post_type !== 'nosotros') return;
+
+    wp_enqueue_media();
+    wp_register_script('vertisub-inline', false, array('jquery'), null, true);
+    wp_enqueue_script('vertisub-inline');
+
+    $inline_js = <<<'JS'
+jQuery(document).ready(function ($) {
+    var mediaUploader;
+
+    $(document).on('click', '.upload-media-button', function (e) {
+        e.preventDefault();
+        var button = $(this);
+        var target = $(button.data('target'));
+
+        mediaUploader = wp.media({
+            title: 'Seleccionar archivo',
+            button: { text: 'Usar este archivo' },
+            multiple: false
+        }).on('select', function () {
+            var attachment = mediaUploader.state().get('selection').first().toJSON();
+            if (target.length) target.val(attachment.url);
+        }).open();
+    });
+
+    $(document).on('click', '.remove-media-button', function (e) {
+        e.preventDefault();
+        var target = $($(this).data('target'));
+        if (target.length) target.val('');
+    });
+});
+JS;
+    wp_add_inline_script('vertisub-inline', $inline_js);
+}
+add_action('admin_enqueue_scripts', 'vertisub_admin_assets');
+```
+
+## Displaying Media on Frontend
+
+### Display Images
+
+```php
+// From URLs (Services)
+$imagenes = get_post_meta($post_id, '_imagenes_reseña', true) ?: [];
+foreach ($imagenes as $img_url) {
+    echo '<img src="' . esc_url($img_url) . '" alt="" class="service-image">';
+}
+
+// From Attachment IDs (Courses)
+$imagenes = get_post_meta($post_id, '_curso_imagenes', true) ?: [];
+foreach ($imagenes as $img_id) {
+    echo wp_get_attachment_image($img_id, 'large', false, 
+        array('class' => 'course-image'));
+}
+```
+
+### Display Videos
+
+```php
+// Video files
+$videos = get_post_meta($post_id, '_videos_reseña', true) ?: [];
+foreach ($videos as $video_url) {
+    echo '<video controls class="service-video">';
+    echo '<source src="' . esc_url($video_url) . '" type="video/mp4">';
+    echo 'Your browser does not support the video tag.';
+    echo '</video>';
+}
+
+// Video URLs (YouTube/Vimeo with oEmbed)
+$video_urls = get_post_meta($post_id, '_video_urls_reseña', true) ?: [];
+foreach ($video_urls as $url) {
+    echo wp_oembed_get($url, array('width' => 640));
+}
+```
+
+### Responsive Image Gallery
+
+```php
+<div class="media-gallery">
+    <?php
+    $imagenes = get_post_meta(get_the_ID(), '_imagenes_reseña', true) ?: [];
+    foreach ($imagenes as $img_url) :
+    ?>
+        <div class="gallery-item">
+            <a href="<?php echo esc_url($img_url); ?>" 
+               data-lightbox="gallery">
+                <img src="<?php echo esc_url($img_url); ?>" 
+                     alt="Gallery Image">
+            </a>
+        </div>
+    <?php endforeach; ?>
+</div>
+```
+
+## Media Optimization Best Practices
+
+### Image Optimization
+
+1. **Compress Before Upload**: Use tools like TinyPNG or ImageOptim
+2. **Appropriate Dimensions**: Don't upload 4000px images for 800px displays
+3. **Format Selection**:
+   - JPEG for photos
+   - PNG for graphics with transparency
+   - WebP for modern browsers (with fallback)
+4. **Use WordPress Image Sizes**: Leverage thumbnail, medium, large sizes
+5. **Lazy Loading**: Implement lazy loading for galleries
+
+### Video Strategy
+
+1. **External Hosting Preferred**:
+   - Use YouTube/Vimeo for long videos
+   - Reduces server bandwidth and storage
+   - Better streaming performance
+   - Free CDN delivery
+
+2. **When to Upload Videos**:
+   - Short clips (< 30 seconds)
+   - Background videos
+   - No need for player controls
+   - Private/unlisted content
+
+3. **Video Compression**:
+   - Use H.264 codec for compatibility
+   - Target 720p or 1080p maximum
+   - Compress with HandBrake or similar
+   - Keep file size under 10MB when possible
+
+### Server Considerations
+
+```php
+// Check upload limits
+echo 'Max upload size: ' . wp_max_upload_size() / (1024 * 1024) . 'MB';
+
+// Recommended PHP settings in wp-config.php:
+@ini_set('upload_max_size', '64M');
+@ini_set('post_max_size', '64M');
+@ini_set('max_execution_time', '300');
+```
+
+## Security Considerations
+
+### File Type Validation
+
+```php
+// WordPress automatically restricts file types
+// Customize allowed types if needed
+function custom_upload_mimes($mimes) {
+    // Add WebP support
+    $mimes['webp'] = 'image/webp';
+    
+    // Remove potentially dangerous types
+    unset($mimes['exe']);
+    
+    return $mimes;
+}
+add_filter('upload_mimes', 'custom_upload_mimes');
+```
+
+### URL Sanitization
+
+All media URLs are sanitized:
+
+```php
+// For image/video URLs
+$url = esc_url_raw($_POST['media_url']);
+
+// For external video URLs (YouTube/Vimeo)
+$video_url = esc_url_raw($_POST['video_url']);
+
+// Validate URL format
+if (!filter_var($url, FILTER_VALIDATE_URL)) {
+    // Handle invalid URL
+}
+```
+
+## Troubleshooting
+
+### Media Library Not Opening
+
+Ensure `wp_enqueue_media()` is called:
+
+```php
+function my_admin_scripts() {
+    wp_enqueue_media();
+}
+add_action('admin_enqueue_scripts', 'my_admin_scripts');
+```
+
+### Upload Size Limits
+
+Increase limits in `.htaccess`:
+
+```apache
+php_value upload_max_filesize 64M
+php_value post_max_size 64M
+php_value max_execution_time 300
+php_value max_input_time 300
+```
+
+### Video Not Embedding
+
+Check oEmbed provider support:
+
+```php
+// Test oEmbed
+$url = 'https://www.youtube.com/watch?v=VIDEO_ID';
+$embed = wp_oembed_get($url);
+if ($embed === false) {
+    echo 'oEmbed failed for this URL';
+}
+```
+
+## Workflow Example
+
+1. Create a new service
+2. Add 5 optimized images (compressed JPEGs, 1200px wide)
+3. Add 1 YouTube URL for promotional video
+4. Add 1 uploaded video file (15-second clip, 5MB)
+5. Verify all media displays correctly in admin
+6. Preview on frontend to check responsive behavior
+7. Test video playback on mobile devices
+8. Publish and monitor page load time

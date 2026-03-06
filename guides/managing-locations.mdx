@@ -1,0 +1,458 @@
+---
+title: Managing Country Locations
+description: Guide to managing country locations, contact information, and documents
+---
+
+This guide covers managing country locations (Países) and country-specific documents in VertiSub CMS. Countries serve as location hubs with contact information and can be associated with services, courses, and documents.
+
+## Overview
+
+The Countries system includes:
+
+- **Países (Countries)**: Location entries with contact details
+- **Documentos por País**: Country-specific documents and resources
+- **Country Associations**: Link countries to services and courses
+
+## Managing Countries (Países)
+
+### Creating a New Country
+
+<Steps>
+
+### Navigate to Countries
+
+In the WordPress admin dashboard, click **Países** in the left sidebar (location icon).
+
+### Add New Country
+
+Click **"Añadir país"** at the top of the page.
+
+### Enter Country Name
+
+Type the country name in the title field (e.g., "España", "México", "Colombia", "Argentina").
+
+### Add Country Description
+
+Use the main content editor to add general information about VertiSub's presence in this country:
+
+- Office locations
+- Service areas
+- Operating history
+- Regional information
+
+</Steps>
+
+### Configuring Country Information
+
+The **"Información del País"** meta box contains all country-specific details.
+
+#### Setting the Country Code/Slug
+
+<Steps>
+
+### Locate Code Field
+
+At the top of the **"Información del País"** meta box, find **"Código/Slug del País"**.
+
+### Enter Country Code
+
+Type a unique country code (e.g., ESP, COL, MEX, ARG).
+
+<Note>
+The code is automatically converted to uppercase. Use standard ISO 3166-1 alpha-3 codes when possible.
+</Note>
+
+### Purpose
+
+This code is used for URL filtering and programmatic country identification.
+
+</Steps>
+
+#### Adding Contact Person
+
+<Steps>
+
+### Locate Contact Field
+
+Find the **"Contacto"** field.
+
+### Enter Contact Name
+
+Type the name of the primary contact person for this country (e.g., "Juan Pérez - Director Regional").
+
+</Steps>
+
+#### Adding Physical Address
+
+<Steps>
+
+### Locate Address Field
+
+Find the **"Dirección"** textarea.
+
+### Enter Full Address
+
+Type the complete office address, including:
+- Street address
+- City/region
+- Postal code
+- Country name (for clarity)
+
+Example:
+```
+Calle del Mar, 45
+28001 Madrid
+España
+```
+
+</Steps>
+
+#### Adding Email Addresses
+
+<Steps>
+
+### View Existing Emails
+
+Under **"Correos"**, you'll see any existing email addresses.
+
+### Add New Email
+
+Click the **"+ Agregar correo"** button.
+
+### Enter Email Address
+
+Type an email address in the new field (e.g., `info@vertisub.es`).
+
+### Add Multiple Emails
+
+Repeat to add multiple email addresses (general info, sales, support, etc.).
+
+### Remove Email
+
+Click the **❌** button next to any email to remove it.
+
+</Steps>
+
+#### Adding Phone Numbers
+
+<Steps>
+
+### View Existing Numbers
+
+Under **"Teléfonos"**, you'll see any existing phone numbers.
+
+### Add New Number
+
+Click the **"+ Agregar teléfono"** button.
+
+### Enter Phone Number
+
+Type the phone number with country code (e.g., `+34 912 345 678`).
+
+### Add Multiple Numbers
+
+Add office, mobile, fax, or emergency numbers as needed.
+
+### Remove Number
+
+Click the **❌** button to remove any number.
+
+</Steps>
+
+#### Adding WhatsApp Numbers
+
+<Steps>
+
+### View Existing WhatsApp
+
+Under **"Whatsapps"**, you'll see existing WhatsApp numbers.
+
+### Add New WhatsApp
+
+Click the **"+ Agregar WhatsApp"** button.
+
+### Enter WhatsApp Number
+
+Type the WhatsApp number with country code (e.g., `+34 600 123 456`).
+
+<Note>
+Include the country code without spaces for WhatsApp API compatibility.
+</Note>
+
+### Add Multiple WhatsApp Numbers
+
+Add separate numbers for different departments or contacts.
+
+### Remove WhatsApp
+
+Click the **❌** button to remove any WhatsApp number.
+
+</Steps>
+
+### Publishing Country Entry
+
+<Steps>
+
+### Review Information
+
+Verify that you've completed:
+
+- ✓ Country name
+- ✓ Country code/slug
+- ✓ Contact person
+- ✓ Physical address
+- ✓ At least one email address
+- ✓ At least one phone or WhatsApp number
+
+### Publish
+
+Click **"Publicar"** to make the country entry live.
+
+</Steps>
+
+## Managing Country Documents
+
+Country documents are files and resources specific to a particular country (forms, regulations, guides, etc.).
+
+### Creating a Document Entry
+
+<Steps>
+
+### Navigate to Documents
+
+In the left sidebar, click **Documentos por País** (document icon).
+
+### Add New Document
+
+Click **"Añadir documento"** at the top.
+
+### Enter Document Title
+
+Add a descriptive title (e.g., "Formulario de Inscripción - España", "Safety Regulations - Mexico").
+
+### Add Document Description
+
+Use the content editor to describe:
+- What the document contains
+- Who should use it
+- When it's needed
+- Any special instructions
+
+</Steps>
+
+### Associating with a Country
+
+<Steps>
+
+### Locate Country Selector
+
+In the **"Información del Documento"** meta box, find **"Seleccionar País"**.
+
+### Choose Country
+
+Click the dropdown and select the country this document belongs to.
+
+<Warning>
+Each document entry can only be associated with one country. Create separate entries for documents needed in multiple countries.
+</Warning>
+
+</Steps>
+
+### Attaching Document Files
+
+<Steps>
+
+### Add Document Field
+
+Under **"Documentos adjuntos"**, click the **"+ Agregar documento"** button.
+
+### Enter Document Name
+
+In the first field, type a descriptive name for the document (e.g., "Application Form", "Terms and Conditions").
+
+### Select File
+
+Click the **"📂 Seleccionar archivo"** button to open the WordPress Media Library.
+
+### Upload or Choose File
+
+- Upload a new document (PDF, DOCX, XLS, etc.)
+- Or select an existing file from the Media Library
+- Click **"Usar este archivo"** to confirm
+
+### View Attached File
+
+The filename will appear next to the select button.
+
+### Add Multiple Files
+
+Click **"+ Agregar documento"** to attach additional files.
+
+### Remove Documents
+
+Click the **❌** button to remove any document attachment.
+
+</Steps>
+
+<Note>
+Supported file types typically include: PDF, DOC, DOCX, XLS, XLSX, ZIP, JPG, PNG. Check with your site administrator for upload limits and allowed file types.
+</Note>
+
+### Publishing Documents
+
+<Steps>
+
+### Review Document Entry
+
+Verify:
+
+- ✓ Descriptive title
+- ✓ Clear description
+- ✓ Country selected
+- ✓ At least one document attached
+- ✓ Document names are descriptive
+
+### Publish
+
+Click **"Publicar"** to make the document entry live.
+
+</Steps>
+
+## Using Countries in Services and Courses
+
+Once countries are created, they can be associated with services and courses.
+
+### In Services
+
+1. When editing a service, find the **"Países"** meta box in the right sidebar
+2. Select countries where the service is available
+3. The service will appear in country-specific service listings
+
+### In Courses
+
+1. When editing a course, scroll to **"Convenios con Países"**
+2. Check countries where the course is offered
+3. Add country-specific contact URLs
+4. Students can see local availability and contact information
+
+## Best Practices
+
+### Country Entries
+
+- **Complete Information**: Fill in all contact fields for maximum accessibility
+- **Current Contact Details**: Regularly review and update contact information
+- **Multiple Contact Methods**: Provide email, phone, and WhatsApp for different preferences
+- **Standard Codes**: Use consistent country codes across the system
+
+### Contact Information Format
+
+- **Phone Numbers**: Include country codes (e.g., +34 for Spain)
+- **Email Addresses**: Use official company email addresses
+- **WhatsApp**: Format as international numbers without spaces
+- **Addresses**: Include full postal addresses with codes
+
+### Document Management
+
+- **Descriptive Titles**: Use clear titles that indicate content and country
+- **File Naming**: Name files descriptively before uploading (e.g., `spain-enrollment-form-2024.pdf`)
+- **File Sizes**: Keep files under 10MB when possible
+- **Document Updates**: When updating a document, either:
+  - Upload a new version and remove the old one
+  - Or create a new document entry with a version number
+
+### Organization
+
+- **Country Creation First**: Create all country entries before adding services/courses
+- **Consistent Naming**: Use official country names in local language
+- **Logical Grouping**: Group related documents under clear titles
+
+## Common Scenarios
+
+### Adding a New Operating Country
+
+<Steps>
+
+### Create Country Entry
+
+Add the new country with all contact information.
+
+### Update Services
+
+Edit existing services that will be available in the new country and add it to their country list.
+
+### Update Courses
+
+Edit courses offered in the new country and add country agreements with local contact URLs.
+
+### Add Country Documents
+
+Create document entries for country-specific forms and resources.
+
+</Steps>
+
+### Updating Office Contact Information
+
+<Steps>
+
+### Find Country
+
+Navigate to **Países** and find the country to update.
+
+### Edit Entry
+
+Click **"Editar"** to open the country editor.
+
+### Update Contact Fields
+
+Modify email addresses, phone numbers, or address information.
+
+### Update Services/Courses
+
+If contact URLs have changed in courses, update those separately.
+
+### Save Changes
+
+Click **"Actualizar"** to save.
+
+</Steps>
+
+### Creating Country-Specific Documentation
+
+For countries with unique requirements:
+
+1. Create separate document entries for each country
+2. Use clear titles indicating the country
+3. Attach country-specific forms, regulations, or guides
+4. Update document descriptions with country-specific instructions
+
+## Troubleshooting
+
+### Country Not Appearing in Service/Course Selector
+
+1. Ensure the country is published (not draft)
+2. Refresh the service/course editor page
+3. Check that the country post type is properly registered
+
+### Documents Not Uploading
+
+1. Check file size limits (ask your administrator)
+2. Verify file type is allowed
+3. Try a different file format (PDF usually works best)
+4. Check available server storage space
+
+### Multiple Contacts Not Saving
+
+1. Ensure you're clicking the "+ Agregar" buttons to add fields
+2. Don't leave fields empty (remove empty fields with ❌)
+3. Save as draft first, then add more contacts
+4. Check for JavaScript errors in browser console
+
+## Map Integration
+
+While country entries store location data, displaying this information on a map requires additional theme configuration. Consult the [Developer Guide](/developer/custom-post-types) for map integration details.
+
+## Related Guides
+
+- [Managing Services](/guides/managing-services) - Associating services with countries
+- [Managing Courses](/guides/managing-courses) - Setting up country agreements in courses
+- [Content Management Workflows](/guides/content-management) - General content management tips

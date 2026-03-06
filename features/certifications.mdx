@@ -1,0 +1,308 @@
+---
+title: Certifications
+description: Managing professional certifications and credentials in the VertiSub CMS
+---
+
+The Certifications feature allows you to showcase professional credentials, industry certifications, and qualifications offered or recognized by your organization.
+
+## Overview
+
+Certifications are implemented as a simple custom post type (`certificaciones`) with basic WordPress features:
+- Title for certification name
+- Rich text editor for details
+- Featured image for certification badge or logo
+
+## Post Type Registration
+
+Certifications are registered in `inc/cpts/certification.php:8-33`:
+
+```php
+function vertisub_create_certification_post_type()
+{
+    register_post_type(
+        'certificaciones',
+        array(
+            'labels' => array(
+                'name'               => 'Certificaciones',
+                'singular_name'      => 'Certificación',
+                'add_new'            => 'Añadir Nueva',
+                'add_new_item'       => 'Añadir Nueva Certificación',
+                'edit_item'          => 'Editar Certificación',
+                'new_item'           => 'Nueva Certificación',
+                'view_item'          => 'Ver Certificación',
+                'search_items'       => 'Buscar Certificaciones',
+                'not_found'          => 'No se encontraron certificaciones',
+                'not_found_in_trash' => 'No hay certificaciones en la papelera',
+            ),
+            'public'      => true,
+            'has_archive' => true,
+            'menu_icon'   => 'dashicons-awards',
+            'supports'    => array('title', 'editor', 'thumbnail'),
+            'rewrite'     => array('slug' => 'certificaciones'),
+        )
+    );
+}
+add_action('init', 'vertisub_create_certification_post_type');
+```
+
+## Supported Features
+
+The certifications post type supports:
+- **Title**: Name of the certification
+- **Editor**: Detailed description and requirements
+- **Thumbnail**: Featured image (certification logo or badge)
+
+## Creating a Certification
+
+### Basic Setup
+
+1. Navigate to **Certificaciones > Añadir Nueva** in WordPress admin
+2. Enter the certification name as the title
+   - Example: "PADI Open Water Diver"
+   - Example: "Commercial Diving Supervisor"
+   - Example: "Underwater Welding Certification"
+
+### Adding Details
+
+Use the editor to include:
+
+- **Description**: What the certification represents
+- **Requirements**: Prerequisites and qualifications needed
+- **Skills Covered**: Competencies gained
+- **Validity Period**: How long the certification is valid
+- **Renewal Process**: How to maintain the certification
+- **Recognition**: Who recognizes or accredits this certification
+- **Related Courses**: Links to courses that lead to this certification
+
+### Setting the Featured Image
+
+1. Click **Set featured image** in the sidebar
+2. Upload or select:
+   - Official certification logo
+   - Certification badge
+   - Sample certificate image
+   - Related industry symbol
+
+## Content Guidelines
+
+### Title Format
+
+Use clear, official certification names:
+
+```
+Good:
+- PADI Advanced Open Water Diver
+- IMCA Air Diving Supervisor
+- AWS D3.6 Underwater Welding Certification
+
+Avoid:
+- Advanced Cert
+- Supervisor Level 2
+- Welding
+```
+
+### Description Structure
+
+Organize the description for clarity:
+
+```html
+<h3>Overview</h3>
+<p>Brief introduction to the certification...</p>
+
+<h3>Prerequisites</h3>
+<ul>
+  <li>Minimum age requirement</li>
+  <li>Previous certifications needed</li>
+  <li>Medical clearance requirements</li>
+</ul>
+
+<h3>Competencies</h3>
+<ul>
+  <li>Skill 1</li>
+  <li>Skill 2</li>
+  <li>Skill 3</li>
+</ul>
+
+<h3>Examination</h3>
+<p>Details about testing and evaluation...</p>
+
+<h3>Validity and Renewal</h3>
+<p>Duration and renewal requirements...</p>
+```
+
+## Displaying Certifications
+
+### Archive Page
+
+The archive is available at `/certificaciones/` by default:
+
+```php
+// In archive-certificaciones.php
+if (have_posts()) {
+    while (have_posts()) {
+        the_post();
+        ?>
+        <div class="certification-item">
+            <?php if (has_post_thumbnail()) : ?>
+                <div class="certification-badge">
+                    <?php the_post_thumbnail('medium'); ?>
+                </div>
+            <?php endif; ?>
+            
+            <h2><?php the_title(); ?></h2>
+            <div class="certification-excerpt">
+                <?php the_excerpt(); ?>
+            </div>
+            <a href="<?php the_permalink(); ?>" class="btn">Learn More</a>
+        </div>
+        <?php
+    }
+}
+```
+
+### Single Certification Page
+
+```php
+// In single-certificaciones.php
+if (have_posts()) {
+    while (have_posts()) {
+        the_post();
+        ?>
+        <article class="certification-detail">
+            <header>
+                <h1><?php the_title(); ?></h1>
+                <?php if (has_post_thumbnail()) : ?>
+                    <div class="certification-badge-large">
+                        <?php the_post_thumbnail('large'); ?>
+                    </div>
+                <?php endif; ?>
+            </header>
+            
+            <div class="certification-content">
+                <?php the_content(); ?>
+            </div>
+        </article>
+        <?php
+    }
+}
+```
+
+### Certification Grid
+
+Display certifications in a grid layout:
+
+```php
+<?php
+$certifications = get_posts(array(
+    'post_type' => 'certificaciones',
+    'posts_per_page' => -1,
+    'orderby' => 'title',
+    'order' => 'ASC'
+));
+?>
+
+<div class="certifications-grid">
+    <?php foreach ($certifications as $cert) : ?>
+        <div class="cert-card">
+            <?php echo get_the_post_thumbnail($cert->ID, 'thumbnail'); ?>
+            <h3><?php echo esc_html($cert->post_title); ?></h3>
+            <a href="<?php echo get_permalink($cert->ID); ?>">
+                View Details
+            </a>
+        </div>
+    <?php endforeach; ?>
+</div>
+```
+
+## Linking to Courses
+
+Connect certifications to related courses:
+
+```php
+// In single-certificaciones.php, after main content
+<?php
+// Find courses that might lead to this certification
+$related_courses = get_posts(array(
+    'post_type' => 'cursos',
+    'posts_per_page' => -1,
+    's' => get_the_title() // Search courses for certification name
+));
+
+if ($related_courses) : ?>
+    <section class="related-courses">
+        <h2>Related Training Courses</h2>
+        <div class="course-list">
+            <?php foreach ($related_courses as $course) : ?>
+                <div class="course-item">
+                    <h3><?php echo esc_html($course->post_title); ?></h3>
+                    <a href="<?php echo get_permalink($course->ID); ?>">
+                        View Course
+                    </a>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+<?php endif; ?>
+```
+
+## URL Structure
+
+Certifications use the following URL pattern:
+
+```
+Single: /certificaciones/padi-open-water-diver/
+Archive: /certificaciones/
+```
+
+The slug is automatically generated from the title but can be customized in the editor.
+
+## Best Practices
+
+1. **Official Names**: Always use the official certification name
+2. **High-Quality Images**: Upload clear, professional badge images
+3. **Complete Information**: Include all relevant details about requirements and validity
+4. **Regular Updates**: Keep certification requirements current
+5. **Clear Prerequisites**: List all requirements clearly
+6. **Industry Standards**: Reference official certification bodies
+7. **Search Optimization**: Use common search terms in descriptions
+
+## Common Certification Types
+
+Examples of certifications you might add:
+
+### Diving Certifications
+- Open Water Diver
+- Advanced Open Water Diver
+- Rescue Diver
+- Dive Master
+- Commercial Diver
+- Dive Supervisor
+
+### Technical Certifications
+- Underwater Welding
+- Non-Destructive Testing (NDT)
+- Underwater Inspection
+- Hyperbaric Chamber Operation
+- ROV Pilot
+
+### Safety Certifications
+- First Aid and CPR
+- Oxygen Provider
+- Emergency Response
+- Hazmat Awareness
+- Confined Space Entry
+
+## Workflow Example
+
+1. Create certification: "IMCA Air Diving Supervisor"
+2. Add comprehensive description:
+   - Overview of supervisor responsibilities
+   - Prerequisites (minimum dive hours, previous certs)
+   - Competencies covered
+   - Examination process
+   - Validity period (3 years)
+   - Renewal requirements
+3. Upload IMCA official logo as featured image
+4. Link to related supervisor training course
+5. Publish and add to certifications archive
+6. Cross-reference from related course pages

@@ -1,0 +1,272 @@
+---
+title: Theme Architecture
+description: Understanding the VertiSub CMS theme structure, organization, and file hierarchy
+---
+
+## Overview
+
+The VertiSub CMS WordPress theme follows a modular, organized architecture that separates concerns and promotes maintainability. The theme is built on WordPress best practices with a focus on custom post types, ACF integration, and page templates.
+
+## Directory Structure
+
+```
+vertisubtheme/
+├── acf-json/              # ACF field group JSON exports
+├── assets/                # Static assets (CSS, JS, images)
+│   ├── css/
+│   ├── js/
+│   └── images/
+├── components/            # Reusable template parts
+│   └── floating-buttons.php
+├── inc/                   # Core functionality modules
+│   ├── cpts/             # Custom post type definitions
+│   │   ├── certification.php
+│   │   ├── clients.php
+│   │   ├── countries.php
+│   │   ├── courses.php
+│   │   ├── documents.php
+│   │   └── services.php
+│   ├── customize.php     # Theme customizer settings
+│   ├── enqueue.php       # Asset management
+│   ├── menu.php          # Navigation menus
+│   ├── performance.php   # Performance optimizations
+│   ├── security.php      # Security enhancements
+│   ├── setup.php         # Theme setup and support
+│   └── utils.php         # Helper functions
+├── json/                  # Additional JSON configuration
+├── templates/             # Page templates
+│   ├── home-template.php
+│   ├── services-page.php
+│   ├── courses-page.php
+│   ├── certifications-page.php
+│   ├── about-us-page.php
+│   ├── location-page.php
+│   ├── news-page.php
+│   ├── policies-vertisub.php
+│   ├── privacity-page.php
+│   └── works-page.php
+├── footer.php             # Footer template
+├── functions.php          # Main theme functions loader
+├── header.php             # Header template
+├── index.php              # Main template fallback
+├── loader.php             # Loading animation
+├── single.php             # Single post template
+├── style.css              # Main stylesheet
+└── theme.json             # Theme configuration (block editor)
+```
+
+## Core Architecture Files
+
+### functions.php
+
+The main theme loader file that bootstraps all functionality:
+
+```php
+<?php
+// functions.php:8-10
+define('VERTISUB_URL', get_template_directory_uri());
+define('VERTISUB_DIR', get_template_directory());
+```
+
+**Key Responsibilities:**
+- Defines global constants (`VERTISUB_URL`, `VERTISUB_DIR`)
+- Loads all module files from the `inc/` directory
+- Registers custom post types from `inc/cpts/`
+- Initializes theme utilities and security features
+
+### Module Organization
+
+The theme follows a modular approach with functionality separated into logical files:
+
+#### inc/setup.php
+
+Handles WordPress theme setup and feature registration:
+
+```php
+// inc/setup.php:12-34
+function sancho_theme_setup()
+{
+    add_theme_support('title-tag');
+    add_theme_support('post-thumbnails');
+    add_theme_support('html5', array(
+        'search-form',
+        'comment-form',
+        'comment-list',
+        'gallery',
+        'caption',
+    ));
+    
+    add_theme_support('custom-logo', array(
+        'header-text' => array('site-title'),
+    ));
+    
+    // Custom image sizes
+    add_image_size('hero-image', 1920, 1080, true);
+    add_image_size('service-thumb', 400, 300, true);
+}
+add_action('after_setup_theme', 'sancho_theme_setup');
+```
+
+#### inc/enqueue.php
+
+Manages all CSS and JavaScript asset loading:
+
+```php
+// inc/enqueue.php:8-49
+function sancho_enqueue_assets()
+{
+    // Bootstrap CSS
+    wp_enqueue_style('bootstrap-css',
+        'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
+        array(), '5.3.0'
+    );
+    
+    // Theme styles
+    wp_enqueue_style('sancho-style',
+        get_stylesheet_uri(),
+        array('bootstrap-css'),
+        wp_get_theme()->get('Version')
+    );
+    
+    // Scripts with dependencies
+    wp_enqueue_script('sancho-script',
+        get_template_directory_uri() . '/script.js',
+        array('jquery', 'bootstrap'),
+        filemtime(get_template_directory() . '/script.js'),
+        true
+    );
+}
+add_action('wp_enqueue_scripts', 'sancho_enqueue_assets');
+```
+
+#### inc/utils.php
+
+Provides helper functions used throughout the theme:
+
+```php
+// inc/utils.php:84-93
+function vertisub_get_acf_field(string $field_name, bool $option_page = false)
+{
+    if (function_exists('get_field')) {
+        if ($option_page) {
+            return get_field($field_name, 'option');
+        }
+        return get_field($field_name);
+    }
+    return '';
+}
+```
+
+## Template Hierarchy
+
+The theme implements WordPress's template hierarchy with custom page templates:
+
+### Default Templates
+
+- **index.php** - Fallback template for all content
+- **single.php** - Individual post/CPT display with ACF gallery support
+- **header.php** - Site header and navigation
+- **footer.php** - Site footer and scripts
+
+### Custom Page Templates
+
+Located in `templates/` directory, these provide specialized layouts:
+
+- `home-template.php` - Homepage with banner carousel, projects, and news sections
+- `services-page.php` - Dynamic service listing filtered by country
+- `courses-page.php` - Course catalog with instructor relationships
+- `certifications-page.php` - Certification showcase
+- `about-us-page.php` - Company information and team
+- `location-page.php` - Interactive country/office map
+- `news-page.php` - News and updates listing
+
+## Loading Strategy
+
+### Front-End Asset Loading
+
+1. **CSS Loading Order:**
+   - Bootstrap 5.3.0 (CDN)
+   - AOS (Animate On Scroll)
+   - Google Fonts (Oswald)
+   - Font Awesome 6.4.0
+   - Theme style.css
+
+2. **JavaScript Loading:**
+   - jQuery 3.3.1 + jQuery Migrate
+   - Bootstrap 5.3.0 Bundle (includes Popper)
+   - Various plugins (Owl Carousel, Magnific Popup, etc.)
+   - AOS animation library
+   - Theme script.js
+
+### Conditional Loading
+
+```php
+// inc/enqueue.php:124-132
+if (is_page('ubicacion')) {
+    wp_enqueue_script('maps-js',
+        get_template_directory_uri() . '/assets/js/map.js',
+        array('amcharts-core', 'amcharts-map', 'amcharts-world'),
+        fileatime(get_template_directory() . '/assets/js/map.js'),
+        true
+    );
+}
+```
+
+## Global Constants
+
+Two main constants are available throughout the theme:
+
+```php
+VERTISUB_URL  // Theme URL for assets: get_template_directory_uri()
+VERTISUB_DIR  // Theme directory path: get_template_directory()
+```
+
+**Usage Example:**
+```php
+require_once VERTISUB_DIR . '/inc/setup.php';
+<link href="<?php echo VERTISUB_URL; ?>/assets/css/style.css" />
+```
+
+## Performance Considerations
+
+### Asset Optimization
+
+```php
+// inc/enqueue.php:97-101
+wp_enqueue_script('sancho-script',
+    get_template_directory_uri() . '/script.js',
+    array('jquery', 'bootstrap'),
+    filemtime(get_template_directory() . '/script.js'), // Cache busting
+    true // Load in footer
+);
+```
+
+### File Modification Time for Cache Busting
+
+The theme uses `filemtime()` for automatic cache invalidation when files change.
+
+## Best Practices
+
+### 1. Modular Organization
+All functionality is separated into logical modules in the `inc/` directory, making code easier to maintain and debug.
+
+### 2. Separation of Concerns
+- Custom post types isolated in `inc/cpts/`
+- Page templates in dedicated `templates/` folder
+- Reusable components in `components/`
+
+### 3. WordPress Standards
+- Proper use of WordPress hooks and filters
+- Follows WordPress coding standards
+- Uses translation-ready functions (though not fully implemented)
+
+### 4. Security First
+- Security module in `inc/security.php`
+- Nonce verification for forms
+- Input sanitization and output escaping
+
+## Related Documentation
+
+- [Custom Post Types](/concepts/custom-post-types) - Detailed CPT documentation
+- [Template System](/concepts/template-system) - Page template usage
+- [ACF Integration](/concepts/acf-integration) - Advanced Custom Fields setup

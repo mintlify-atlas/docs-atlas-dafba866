@@ -1,0 +1,462 @@
+---
+title: Advanced Custom Fields
+description: Work with ACF (Advanced Custom Fields) in the VertiSub theme for custom post types and flexible content
+---
+
+The VertiSub theme heavily relies on Advanced Custom Fields (ACF) for custom post types, flexible content, and dynamic data management.
+
+## ACF Requirements
+
+The VertiSub theme **requires** the Advanced Custom Fields plugin:
+
+- **Plugin**: Advanced Custom Fields (ACF Pro recommended)
+- **Minimum Version**: 5.0+
+- **Theme Requirement**: Listed in `style.css` header
+
+```css
+/**
+ * Theme Name:        VertiSub Theme
+ * Dependencies:      Advanced Custom Fields
+ */
+```
+
+## ACF JSON Sync
+
+The theme uses ACF JSON for version control and field group synchronization.
+
+### ACF JSON Directory
+
+Field groups are saved to:
+
+```
+/wp-content/themes/vertisubtheme/acf-json/
+```
+
+### Available Field Groups
+
+The theme includes these ACF field group JSON files:
+
+```
+group_68e95aa039dd5.json
+group_68ed9a325f5cc.json
+group_68edbf681dd09.json
+group_68ee947b0c6e5.json
+group_68ee988a2e350.json
+group_68f0ec6780201.json
+group_68f0efc199300.json
+group_68f11ef8eb79e.json
+group_68f67609ccbee.json
+ui_options_page_68edbe8302c40.json
+ui_options_page_68edbf2466a29.json
+```
+
+### Syncing Field Groups
+
+To sync field groups:
+
+1. Navigate to **Custom Fields > Sync**
+2. Select field groups to sync
+3. Click "Sync" to import from JSON
+
+## Custom Post Types
+
+The theme registers several custom post types with ACF field groups.
+
+### Services (Servicios)
+
+Defined in `/inc/cpts/services.php`:
+
+```php
+function vertisub_create_servicios_post_type()
+{
+    register_post_type(
+        'servicios',
+        array(
+            'labels' => array(
+                'name'               => 'Servicios',
+                'singular_name'      => 'Servicio',
+                'add_new'            => 'Añadir servicio',
+                'add_new_item'       => 'Añadir servicio',
+                'edit_item'          => 'Editar servicio',
+            ),
+            'public'      => true,
+            'has_archive' => false,
+            'menu_icon'   => 'dashicons-hammer',
+            'supports'    => array('title', 'thumbnail', 'editor'),
+            'rewrite'     => array('slug' => 'servicios'),
+        )
+    );
+}
+add_action('init', 'vertisub_create_servicios_post_type');
+```
+
+### Other Custom Post Types
+
+The theme includes:
+
+1. **Certifications** - `/inc/cpts/certification.php`
+2. **Clients** - `/inc/cpts/clients.php`
+3. **Countries (Paises)** - `/inc/cpts/countries.php`
+4. **Courses** - `/inc/cpts/courses.php`
+5. **Documents** - `/inc/cpts/documents.php`
+6. **Services (Servicios)** - `/inc/cpts/services.php`
+
+## Custom Meta Boxes
+
+Some custom post types use traditional WordPress meta boxes alongside ACF.
+
+### Multimedia Meta Box
+
+The Services post type includes a custom multimedia meta box:
+
+```php
+function vertisub_register_servicios_meta_boxes()
+{
+    add_meta_box(
+        'servicios_multimedia',
+        'Multimedia',
+        'vertisub_servicios_multimedia_callback',
+        'servicios',
+        'normal',
+        'default'
+    );
+}
+add_action('add_meta_boxes', 'vertisub_register_servicios_meta_boxes');
+```
+
+### Multimedia Fields
+
+The meta box handles multiple image and video uploads:
+
+```php
+function vertisub_servicios_multimedia_callback($post)
+{
+    $imagenes    = get_post_meta($post->ID, '_imagenes_reseña', true);
+    $videos      = get_post_meta($post->ID, '_videos_reseña', true);
+    $video_urls  = get_post_meta($post->ID, '_video_urls_reseña', true);
+
+    if (!is_array($imagenes)) $imagenes = [];
+    if (!is_array($videos)) $videos = [];
+    if (!is_array($video_urls)) $video_urls = [];
+    
+    // Render fields with media uploader integration
+}
+```
+
+### Saving Custom Meta
+
+```php
+function vertisub_save_multimedia_meta($post_id)
+{
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+
+    // Save images
+    $imagenes = isset($_POST['imagenes_reseña']) 
+        ? array_filter(array_map('esc_url_raw', $_POST['imagenes_reseña'])) 
+        : [];
+    update_post_meta($post_id, '_imagenes_reseña', $imagenes);
+
+    // Save videos
+    $videos = isset($_POST['videos_reseña']) 
+        ? array_filter(array_map('esc_url_raw', $_POST['videos_reseña'])) 
+        : [];
+    update_post_meta($post_id, '_videos_reseña', $videos);
+
+    // Save video URLs
+    $urls = isset($_POST['video_urls_reseña']) 
+        ? array_filter(array_map('esc_url_raw', $_POST['video_urls_reseña'])) 
+        : [];
+    update_post_meta($post_id, '_video_urls_reseña', $urls);
+}
+add_action('save_post', 'vertisub_save_multimedia_meta');
+```
+
+## Retrieving ACF Data
+
+### Get Field Value
+
+```php
+// Get field from current post
+$value = get_field('field_name');
+
+// Get field from specific post
+$value = get_field('field_name', $post_id);
+
+// Get field from options page
+$value = get_field('field_name', 'option');
+```
+
+### Display Field Value
+
+```php
+// Display field automatically
+the_field('field_name');
+
+// Display with conditional
+if (get_field('field_name')) {
+    echo '<div class="field">' . get_field('field_name') . '</div>';
+}
+```
+
+### Image Fields
+
+```php
+// Get image array
+$image = get_field('image_field');
+
+if ($image) {
+    echo '<img src="' . esc_url($image['url']) . '" alt="' . esc_attr($image['alt']) . '">';
+}
+
+// Get image ID only
+$image_id = get_field('image_field');
+$image_url = wp_get_attachment_image_url($image_id, 'hero-image');
+```
+
+### Repeater Fields
+
+```php
+if (have_rows('repeater_field')) {
+    while (have_rows('repeater_field')) {
+        the_row();
+        
+        $title = get_sub_field('title');
+        $description = get_sub_field('description');
+        
+        echo '<h3>' . esc_html($title) . '</h3>';
+        echo '<p>' . esc_html($description) . '</p>';
+    }
+}
+```
+
+### Flexible Content
+
+```php
+if (have_rows('flexible_content')) {
+    while (have_rows('flexible_content')) {
+        the_row();
+        
+        if (get_row_layout() == 'text_block') {
+            $text = get_sub_field('text');
+            echo '<div class="text-block">' . $text . '</div>';
+        } elseif (get_row_layout() == 'image_block') {
+            $image = get_sub_field('image');
+            echo '<img src="' . esc_url($image['url']) . '">';
+        }
+    }
+}
+```
+
+## Country Post Type Example
+
+The Countries (Paises) custom post type uses ACF for contact information:
+
+### Storing Country Data
+
+```php
+$slug      = strtolower(get_post_meta(get_the_ID(), '_pais_slug', true));
+$contacto  = get_post_meta(get_the_ID(), '_contacto', true);
+$direccion = get_post_meta(get_the_ID(), '_direccion', true);
+$correos   = get_post_meta(get_the_ID(), '_correos', true);
+$telefonos = get_post_meta(get_the_ID(), '_telefonos', true);
+$whatsapps = get_post_meta(get_the_ID(), '_whatsapps', true);
+```
+
+### Passing to JavaScript
+
+From `/inc/enqueue.php`:
+
+```php
+$data[$slug] = array(
+    'name'   => get_the_title(),
+    'flag'   => "https://flagcdn.com/w80/{$slug}.png",
+    'type'   => 'Oficina Regional',
+    'status' => 'regional',
+    'contacts' => array(
+        'address' => array(
+            'label' => 'Dirección',
+            'value' => wpautop($direccion),
+            'icon'  => 'map-marker-alt',
+        ),
+        'phones' => array(
+            'label'    => 'Teléfonos',
+            'icon'     => 'phone',
+            'multiple' => true,
+            'values'   => array_map(function ($tel) {
+                return array(
+                    'label'  => 'Número',
+                    'number' => $tel,
+                    'link'   => 'tel:' . preg_replace('/\D/', '', $tel),
+                );
+            }, $telefonos ?: []),
+        ),
+    ),
+);
+
+wp_localize_script('maps-js', 'contactData', $data);
+```
+
+## Relationship Fields
+
+Services can be related to countries using a custom meta box:
+
+```php
+function vertisub_servicios_paises_callback($post)
+{
+    $paises = get_posts(array(
+        'post_type'      => 'paises',
+        'posts_per_page' => -1,
+        'orderby'        => 'title',
+        'order'          => 'ASC'
+    ));
+
+    $selected = get_post_meta($post->ID, '_servicio_paises', true);
+    if (!is_array($selected)) $selected = array();
+
+    echo '<select name="servicio_paises[]" multiple style="width:100%;height:150px;">';
+    foreach ($paises as $pais) {
+        $is_selected = in_array($pais->ID, $selected) ? 'selected' : '';
+        echo '<option value="' . $pais->ID . '" ' . $is_selected . '>';
+        echo esc_html($pais->post_title);
+        echo '</option>';
+    }
+    echo '</select>';
+}
+```
+
+### Saving Relationships
+
+```php
+function vertisub_save_servicios_meta($post_id)
+{
+    if (array_key_exists('servicio_paises', $_POST)) {
+        update_post_meta($post_id, '_servicio_paises', $_POST['servicio_paises']);
+    }
+}
+add_action('save_post_servicios', 'vertisub_save_servicios_meta');
+```
+
+### Querying Related Posts
+
+```php
+$related_countries = get_post_meta($service_id, '_servicio_paises', true);
+
+if (!empty($related_countries)) {
+    $country_query = new WP_Query(array(
+        'post_type' => 'paises',
+        'post__in'  => $related_countries,
+    ));
+
+    if ($country_query->have_posts()) {
+        while ($country_query->have_posts()) {
+            $country_query->the_post();
+            // Display country
+        }
+        wp_reset_postdata();
+    }
+}
+```
+
+## Admin Enqueue for Media Uploader
+
+For custom meta boxes using the media uploader:
+
+```php
+function vertisub_admin_assets($hook)
+{
+    if (!is_admin()) return;
+    $screen = get_current_screen();
+    if (!$screen || $screen->post_type !== 'nosotros') return;
+
+    wp_enqueue_media();
+    wp_register_script('vertisub-inline', false, array('jquery'), null, true);
+    wp_enqueue_script('vertisub-inline');
+
+    $inline_js = <<<'JS'
+jQuery(document).ready(function ($) {
+    var mediaUploader;
+
+    $(document).on('click', '.upload-media-button', function (e) {
+        e.preventDefault();
+        var button = $(this);
+        var target = $(button.data('target'));
+
+        mediaUploader = wp.media({
+            title: 'Seleccionar archivo',
+            button: { text: 'Usar este archivo' },
+            multiple: false
+        }).on('select', function () {
+            var attachment = mediaUploader.state().get('selection').first().toJSON();
+            if (target.length) target.val(attachment.url);
+        }).open();
+    });
+});
+JS;
+    wp_add_inline_script('vertisub-inline', $inline_js);
+}
+add_action('admin_enqueue_scripts', 'vertisub_admin_assets');
+```
+
+## Best Practices
+
+1. **Use ACF JSON** - Always sync field groups via JSON
+2. **Sanitize output** - Use `esc_html()`, `esc_url()`, etc.
+3. **Check for field existence** - Use conditionals before displaying
+4. **Use field keys** - More reliable than field names
+5. **Document custom fields** - Add descriptions in ACF field settings
+6. **Use ACF location rules** - Show fields only where needed
+7. **Test thoroughly** - Verify data saves correctly
+
+## Common Patterns
+
+### Hero Section with ACF
+
+```php
+$hero_image = get_field('hero_image');
+$hero_title = get_field('hero_title');
+$hero_subtitle = get_field('hero_subtitle');
+
+if ($hero_image) {
+    echo '<section class="hero-section" style="background-image: url(' . esc_url($hero_image['url']) . ');">>';
+    echo '<h1>' . esc_html($hero_title) . '</h1>';
+    echo '<p>' . esc_html($hero_subtitle) . '</p>';
+    echo '</section>';
+}
+```
+
+### Service Loop with Meta
+
+```php
+$services = new WP_Query(array(
+    'post_type' => 'servicios',
+    'posts_per_page' => -1
+));
+
+if ($services->have_posts()) {
+    while ($services->have_posts()) {
+        $services->the_post();
+        
+        $images = get_post_meta(get_the_ID(), '_imagenes_reseña', true);
+        $videos = get_post_meta(get_the_ID(), '_videos_reseña', true);
+        
+        echo '<div class="service">';
+        echo '<h2>' . get_the_title() . '</h2>';
+        echo '<div class="content">' . get_the_content() . '</div>';
+        
+        if (!empty($images)) {
+            foreach ($images as $image) {
+                echo '<img src="' . esc_url($image) . '">';
+            }
+        }
+        
+        echo '</div>';
+    }
+    wp_reset_postdata();
+}
+```
+
+## Next Steps
+
+- [Theme Setup](/customization/theme-setup) - Configure theme features
+- [Styling & Design](/customization/styling) - Style your custom fields
+- [Menu Customization](/customization/menus) - Configure navigation

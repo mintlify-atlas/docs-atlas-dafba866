@@ -1,0 +1,399 @@
+---
+title: "Installation Guide"
+description: "Complete installation instructions for the VertiSub CMS WordPress theme including prerequisites, setup, and configuration"
+---
+
+## Prerequisites
+
+Before installing VertiSub CMS, ensure your server meets these requirements:
+
+<Steps>
+  <Step title="Server Requirements">
+    - **WordPress**: Version 6.1 or higher
+    - **PHP**: Version 8.0 or higher
+    - **MySQL**: Version 5.7 or higher (or MariaDB 10.2+)
+    - **Web Server**: Apache or Nginx
+    - **Memory**: Minimum 256MB PHP memory limit (512MB recommended)
+  </Step>
+  
+  <Step title="Required Plugins">
+    The theme depends on these WordPress plugins:
+    
+    - **Advanced Custom Fields (ACF)** - Required for custom meta fields
+    
+    <Warning>
+      The theme will not function correctly without ACF installed and activated.
+    </Warning>
+  </Step>
+</Steps>
+
+## Installation Methods
+
+You can install VertiSub CMS using one of three methods:
+
+### Method 1: WordPress Admin Upload (Recommended)
+
+<Steps>
+  <Step title="Download the Theme">
+    Obtain the theme ZIP file (`vertisubtheme.zip`) from your provider.
+  </Step>
+  
+  <Step title="Access WordPress Admin">
+    Log in to your WordPress dashboard:
+    ```
+    https://yoursite.com/wp-admin
+    ```
+  </Step>
+  
+  <Step title="Upload Theme">
+    Navigate to **Appearance → Themes → Add New → Upload Theme**
+    
+    1. Click "Choose File" and select the `vertisubtheme.zip` file
+    2. Click "Install Now"
+    3. Wait for the upload and installation to complete
+  </Step>
+  
+  <Step title="Activate Theme">
+    Once installed, click the **Activate** button to enable the theme.
+  </Step>
+</Steps>
+
+### Method 2: FTP/SFTP Upload
+
+<Steps>
+  <Step title="Extract Theme Files">
+    Unzip the `vertisubtheme.zip` file on your local computer.
+  </Step>
+  
+  <Step title="Connect via FTP">
+    Use an FTP client (FileZilla, Cyberduck, etc.) to connect to your server:
+    
+    ```bash
+    Host: ftp.yoursite.com
+    Username: your-ftp-username
+    Password: your-ftp-password
+    Port: 21 (or 22 for SFTP)
+    ```
+  </Step>
+  
+  <Step title="Upload to WordPress">
+    Upload the extracted `vertisubtheme` folder to:
+    ```
+    /wp-content/themes/
+    ```
+    
+    The final path should be:
+    ```
+    /wp-content/themes/vertisubtheme/
+    ```
+  </Step>
+  
+  <Step title="Activate in WordPress">
+    Go to **Appearance → Themes** in WordPress admin and activate VertiSub Theme.
+  </Step>
+</Steps>
+
+### Method 3: WP-CLI Installation
+
+For advanced users with command-line access:
+
+```bash
+# Navigate to WordPress installation
+cd /path/to/wordpress
+
+# Install theme from ZIP
+wp theme install vertisubtheme.zip
+
+# Activate the theme
+wp theme activate vertisubtheme
+
+# Verify installation
+wp theme list
+```
+
+## Installing Required Plugins
+
+After installing the theme, install and activate required plugins:
+
+<Steps>
+  <Step title="Install Advanced Custom Fields">
+    **Via WordPress Admin:**
+    
+    1. Go to **Plugins → Add New**
+    2. Search for "Advanced Custom Fields"
+    3. Click **Install Now** on the ACF plugin by Delicious Brains
+    4. Click **Activate** after installation
+    
+    **Via WP-CLI:**
+    ```bash
+    wp plugin install advanced-custom-fields --activate
+    ```
+  </Step>
+  
+  <Step title="Verify Plugin Activation">
+    Go to **Plugins → Installed Plugins** and ensure ACF shows as "Active".
+    
+    <Note>
+      You should see "Custom Fields" in your WordPress admin menu after activation.
+    </Note>
+  </Step>
+</Steps>
+
+## Post-Installation Configuration
+
+After installing the theme and plugins, complete these configuration steps:
+
+### 1. Set Permalink Structure
+
+For the custom post types to work correctly:
+
+<Steps>
+  <Step title="Configure Permalinks">
+    1. Go to **Settings → Permalinks**
+    2. Select **Post name** option (recommended)
+    3. Click **Save Changes**
+    
+    ```
+    Custom Structure: /%postname%/
+    ```
+    
+    <Warning>
+      Using "Plain" permalinks will prevent custom post type URLs from working correctly.
+    </Warning>
+  </Step>
+  
+  <Step title="Flush Rewrite Rules">
+    The theme registers custom rewrite rules. After activating, visit the Permalinks page to flush the rules.
+    
+    **Via WP-CLI:**
+    ```bash
+    wp rewrite flush
+    ```
+  </Step>
+</Steps>
+
+### 2. Configure Menus
+
+The theme uses a custom menu system with dropdown support:
+
+```php menu.php
+// The theme registers this menu location
+register_nav_menus(array(
+    'primary_menu' => __('Primary Menu', 'vertisub-theme'),
+));
+```
+
+<Steps>
+  <Step title="Create Menu">
+    1. Go to **Appearance → Menus**
+    2. Click **Create a new menu**
+    3. Name it "Main Menu" or "Primary Navigation"
+    4. Click **Create Menu**
+  </Step>
+  
+  <Step title="Add Menu Items">
+    Add pages, custom post types, or custom links to your menu:
+    
+    - Services
+    - Courses  
+    - Certifications
+    - About Us
+    - Contact
+  </Step>
+  
+  <Step title="Assign Menu Location">
+    Under **Menu Settings**, check **Primary Menu** and click **Save Menu**.
+  </Step>
+</Steps>
+
+### 3. Upload Logo
+
+Customize your site's logo:
+
+<Steps>
+  <Step title="Access Customizer">
+    Go to **Appearance → Customize → Site Identity**
+  </Step>
+  
+  <Step title="Upload Logo">
+    1. Click **Select Logo**
+    2. Upload your logo image (PNG or SVG recommended)
+    3. Recommended dimensions: 300x100px
+    4. Click **Select** then **Publish**
+  </Step>
+</Steps>
+
+The logo will appear in the header:
+
+```php header.php:30
+if (function_exists('the_custom_logo') && has_custom_logo()) {
+    $custom_logo_id = get_theme_mod('custom_logo');
+    $logo = wp_get_attachment_image_src($custom_logo_id, 'full');
+    echo '<img src="' . esc_url($logo[0]) . '" alt="' . get_bloginfo('name') . '" style="width:130px; height:auto;">';
+} else {
+    bloginfo('name');
+}
+```
+
+### 4. Configure Custom Image Sizes
+
+The theme automatically creates these image sizes:
+
+```php setup.php:31
+add_image_size('hero-image', 1920, 1080, true);
+add_image_size('service-thumb', 400, 300, true);
+```
+
+<Note>
+  To regenerate thumbnails for existing images, install the "Regenerate Thumbnails" plugin and run it once.
+</Note>
+
+### 5. Test Custom Post Types
+
+Verify that all custom post types are registered:
+
+<Steps>
+  <Step title="Check Admin Menu">
+    You should see these new menu items:
+    
+    - **Servicios** (Services) - with hammer icon
+    - **Cursos** (Courses) - with awards icon  
+    - **Certificaciones** (Certifications) - with awards icon
+    - **Países** (Countries)
+    - **Clientes** (Clients)
+    - **Documentos** (Documents)
+  </Step>
+  
+  <Step title="Test Post Type Creation">
+    Try creating a test post in each custom post type to ensure they work correctly.
+  </Step>
+</Steps>
+
+## Theme Structure Verification
+
+Verify your theme installation is complete:
+
+```bash
+wp-content/themes/vertisubtheme/
+├── functions.php           ✓ Main theme file
+├── style.css              ✓ Main stylesheet
+├── header.php             ✓ Header template
+├── footer.php             ✓ Footer template
+├── index.php              ✓ Main template
+├── inc/                   ✓ Core includes
+│   ├── setup.php
+│   ├── enqueue.php
+│   ├── security.php
+│   ├── performance.php
+│   ├── menu.php
+│   ├── customize.php
+│   ├── utils.php
+│   └── cpts/
+│       ├── services.php
+│       ├── courses.php
+│       ├── certification.php
+│       ├── countries.php
+│       ├── clients.php
+│       └── documents.php
+├── templates/             ✓ Page templates
+└── components/            ✓ Reusable components
+```
+
+## Troubleshooting Installation
+
+### Theme Not Appearing
+
+<CodeGroup>
+```bash Check file permissions
+# Ensure proper permissions
+chmod 755 /wp-content/themes/vertisubtheme
+chown -R www-data:www-data /wp-content/themes/vertisubtheme
+```
+
+```bash Check WP-CLI
+# List installed themes
+wp theme list
+
+# Check for errors
+wp theme status vertisubtheme
+```
+</CodeGroup>
+
+### Custom Post Types Not Showing
+
+If custom post types don't appear after activation:
+
+1. **Flush Permalinks**: Go to Settings → Permalinks and click Save
+2. **Check PHP Version**: Ensure you're running PHP 8.0+
+3. **Enable Debug Mode**: Add to `wp-config.php`:
+
+```php wp-config.php
+define('WP_DEBUG', true);
+define('WP_DEBUG_LOG', true);
+define('WP_DEBUG_DISPLAY', false);
+```
+
+### Missing Styles
+
+If the site looks unstyled:
+
+1. **Clear Cache**: Clear any caching plugins
+2. **Check Console**: Open browser DevTools and check for 404 errors
+3. **Verify Enqueue**: Ensure `enqueue.php` is being loaded properly
+
+```php functions.php:12
+// Verify this line exists
+require_once VERTISUB_DIR . '/inc/enqueue.php';
+```
+
+## Security Considerations
+
+After installation, the theme automatically implements these security measures:
+
+```php security.php:14
+function vertisub_security_headers() {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-XSS-Protection: 1; mode=block');
+}
+add_action('send_headers', 'vertisub_security_headers');
+```
+
+<Note>
+  These headers protect against XSS attacks, clickjacking, and MIME-type sniffing.
+</Note>
+
+## Performance Optimization
+
+The theme includes performance features out of the box. For additional optimization:
+
+1. **Install a Caching Plugin**: WP Rocket, W3 Total Cache, or WP Super Cache
+2. **Enable Gzip Compression**: Via server configuration
+3. **Use a CDN**: For external assets (Bootstrap, Font Awesome, etc.)
+4. **Optimize Images**: Use WebP format and lazy loading
+
+## Next Steps
+
+Your theme is now installed! Continue with:
+
+<CardGroup cols={2}>
+  <Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+    Create your first service and course
+  </Card>
+  
+  <Card title="Theme Reference" icon="book" href="/api/custom-post-types">
+    Learn about custom post types in detail
+  </Card>
+</CardGroup>
+
+## Getting Help
+
+If you encounter issues during installation:
+
+- Check the PHP error log: `/wp-content/debug.log`
+- Verify server requirements are met
+- Contact Vertisub support with your WordPress and PHP versions
+
+<Warning>
+  Always backup your database and files before installing or updating the theme!
+</Warning>

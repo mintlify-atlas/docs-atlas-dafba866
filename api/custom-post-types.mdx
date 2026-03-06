@@ -1,0 +1,453 @@
+---
+title: Custom Post Types
+description: Register and manage custom post types for certifications, clients, countries, courses, documents, and services
+---
+
+The VertiSub theme includes several custom post types to manage specialized content. Each CPT includes registration functions, metaboxes, and save handlers.
+
+## Certifications
+
+### vertisub_create_certification_post_type()
+
+Registers a custom post type for certifications with archive support.
+
+**Location:** `inc/cpts/certification.php:8`
+
+<ParamField path="return" type="void">
+  This function does not return a value.
+</ParamField>
+
+**Features:**
+- Public post type with archive enabled
+- Supports: title, editor, thumbnail
+- Menu icon: dashicons-awards
+- URL slug: `certificaciones`
+
+```php
+// Automatically registered on init hook
+add_action('init', 'vertisub_create_certification_post_type');
+
+// Access certifications
+$args = array(
+    'post_type' => 'certificaciones',
+    'posts_per_page' => 10
+);
+$certifications = new WP_Query($args);
+```
+
+---
+
+## Clients
+
+### vertisub_create_team_post_type()
+
+Registers a custom post type for clients (customers/partners).
+
+**Location:** `inc/cpts/clients.php:12`
+
+<ParamField path="return" type="void">
+  This function does not return a value.
+</ParamField>
+
+**Features:**
+- Public post type without archive
+- Supports: title, editor, thumbnail
+- Menu icon: dashicons-businessperson
+- URL slug: `clientes`
+
+```php
+// Automatically registered on init hook
+add_action('init', 'vertisub_create_team_post_type');
+
+// Query clients
+$clients = get_posts(array(
+    'post_type' => 'clientes',
+    'numberposts' => -1
+));
+```
+
+---
+
+## Countries
+
+### vertisub_create_paises_post_type()
+
+Registers a custom post type for countries with contact information.
+
+**Location:** `inc/cpts/countries.php:10`
+
+<ParamField path="return" type="void">
+  This function does not return a value.
+</ParamField>
+
+**Features:**
+- Public post type without archive
+- Supports: title, editor
+- Menu icon: dashicons-location-alt
+- URL slug: `paises`
+- Custom metabox for country information
+
+```php
+// Automatically registered on init hook
+add_action('init', 'vertisub_create_paises_post_type');
+
+// Get country meta data
+$country_id = 123;
+$slug = get_post_meta($country_id, '_pais_slug', true);
+$contact = get_post_meta($country_id, '_contacto', true);
+$address = get_post_meta($country_id, '_direccion', true);
+$emails = get_post_meta($country_id, '_correos', true);
+$phones = get_post_meta($country_id, '_telefonos', true);
+$whatsapps = get_post_meta($country_id, '_whatsapps', true);
+```
+
+### vertisub_add_paises_metaboxes()
+
+Adds metabox for country information fields.
+
+**Location:** `inc/cpts/countries.php:38`
+
+<ParamField path="return" type="void">
+  Adds a metabox to the paises post type edit screen.
+</ParamField>
+
+### vertisub_render_paises_metabox()
+
+Renders the country information metabox with dynamic fields.
+
+**Location:** `inc/cpts/countries.php:51`
+
+<ParamField path="post" type="WP_Post">
+  The post object being edited.
+</ParamField>
+
+**Meta Fields:**
+- `_pais_slug` - Country code (e.g., ESP, COL, MEX)
+- `_contacto` - Contact name
+- `_direccion` - Address
+- `_correos[]` - Array of email addresses
+- `_telefonos[]` - Array of phone numbers
+- `_whatsapps[]` - Array of WhatsApp numbers
+
+### vertisub_save_paises_meta()
+
+Saves country metabox data with nonce verification.
+
+**Location:** `inc/cpts/countries.php:175`
+
+<ParamField path="post_id" type="int" required>
+  The ID of the post being saved.
+</ParamField>
+
+<ParamField path="return" type="void">
+  Saves country meta data to the database.
+</ParamField>
+
+---
+
+## Courses
+
+### vertisub_create_cursos_post_type()
+
+Registers a custom post type for courses with comprehensive metadata.
+
+**Location:** `inc/cpts/courses.php:11`
+
+<ParamField path="return" type="void">
+  This function does not return a value.
+</ParamField>
+
+**Features:**
+- Public post type without archive
+- Supports: title, editor, thumbnail
+- Menu icon: dashicons-awards
+- URL slug: `cursos`
+- Extensive metabox for course details
+
+```php
+// Automatically registered on init hook
+add_action('init', 'vertisub_create_cursos_post_type');
+
+// Get course meta data
+$course_id = 456;
+$images = get_post_meta($course_id, '_curso_imagenes', true);
+$modalities = get_post_meta($course_id, '_curso_modalidades', true);
+$intro_video = get_post_meta($course_id, '_curso_intro_video', true);
+$testimonials = get_post_meta($course_id, '_curso_testimonios', true);
+$syllabus = get_post_meta($course_id, '_curso_temario', true);
+$enroll_url = get_post_meta($course_id, '_curso_url_inscribir', true);
+$instructors = get_post_meta($course_id, '_curso_instructores', true);
+$countries = get_post_meta($course_id, '_curso_paises', true);
+$agreements = get_post_meta($course_id, '_curso_convenios', true);
+```
+
+### vertisub_cursos_metaboxes()
+
+Adds metabox for course details.
+
+**Location:** `inc/cpts/courses.php:40`
+
+<ParamField path="return" type="void">
+  Adds a metabox to the cursos post type edit screen.
+</ParamField>
+
+### vertisub_cursos_callback()
+
+Renders the course details metabox with all course fields.
+
+**Location:** `inc/cpts/courses.php:55`
+
+<ParamField path="post" type="WP_Post">
+  The post object being edited.
+</ParamField>
+
+**Meta Fields:**
+- `_curso_imagenes[]` - Array of image attachment IDs
+- `_curso_modalidades[]` - Array of course modalities
+- `_curso_intro_video` - Introduction video URL
+- `_curso_testimonios[]` - Array of testimonial video URLs
+- `_curso_temario[]` - Array of syllabus items
+- `_curso_url_inscribir` - Enrollment URL
+- `_curso_url_info` - More information URL
+- `_curso_url_plataforma` - Learning platform URL
+- `_curso_url_oficial` - Official page URL
+- `_curso_instructores[]` - Array of instructor post IDs
+- `_curso_paises[]` - Array of country post IDs
+- `_curso_paises_urls[]` - Array of contact URLs by country ID
+- `_curso_convenios[]` - Array of custom agreements with titulo and url
+
+### vertisub_save_cursos_metabox()
+
+Saves course metabox data with nonce verification.
+
+**Location:** `inc/cpts/courses.php:247`
+
+<ParamField path="post_id" type="int" required>
+  The ID of the post being saved.
+</ParamField>
+
+<ParamField path="return" type="int|void">
+  Returns post_id if validation fails, otherwise saves data and returns void.
+</ParamField>
+
+```php
+// Example: Get course agreements
+$agreements = get_post_meta($course_id, '_curso_convenios', true);
+foreach ($agreements as $agreement) {
+    echo $agreement['titulo'] . ': ' . $agreement['url'];
+}
+```
+
+---
+
+## Documents
+
+### vertisub_create_documentos_post_type()
+
+Registers a custom post type for country-specific documents.
+
+**Location:** `inc/cpts/documents.php:8`
+
+<ParamField path="return" type="void">
+  This function does not return a value.
+</ParamField>
+
+**Features:**
+- Public post type without archive
+- Supports: title, editor
+- Menu icon: dashicons-media-document
+- URL slug: `documentos-pais`
+- Metabox for document management
+
+```php
+// Automatically registered on init hook
+add_action('init', 'vertisub_create_documentos_post_type');
+
+// Get documents for a country
+$doc_id = 789;
+$country_id = get_post_meta($doc_id, '_pais_relacionado', true);
+$documents = get_post_meta($doc_id, '_documentos', true);
+```
+
+### vertisub_add_documentos_metaboxes()
+
+Adds metabox for document management.
+
+**Location:** `inc/cpts/documents.php:34`
+
+<ParamField path="return" type="void">
+  Adds a metabox to the documentos_pais post type edit screen.
+</ParamField>
+
+### vertisub_render_documentos_metabox()
+
+Renders the document management metabox with file upload.
+
+**Location:** `inc/cpts/documents.php:47`
+
+<ParamField path="post" type="WP_Post">
+  The post object being edited.
+</ParamField>
+
+**Meta Fields:**
+- `_pais_relacionado` - Related country post ID
+- `_documentos[]` - Array of documents with nombre (name) and archivo (file URL)
+
+### vertisub_save_documentos_meta()
+
+Saves document metabox data with nonce verification.
+
+**Location:** `inc/cpts/documents.php:172`
+
+<ParamField path="post_id" type="int" required>
+  The ID of the post being saved.
+</ParamField>
+
+<ParamField path="return" type="void">
+  Saves document meta data to the database.
+</ParamField>
+
+```php
+// Example: Display documents for a country
+$documents = get_post_meta($doc_id, '_documentos', true);
+foreach ($documents as $doc) {
+    echo '<a href="' . esc_url($doc['archivo']) . '">' . 
+         esc_html($doc['nombre']) . '</a>';
+}
+```
+
+---
+
+## Services
+
+### vertisub_create_servicios_post_type()
+
+Registers a custom post type for services with multimedia support.
+
+**Location:** `inc/cpts/services.php:10`
+
+<ParamField path="return" type="void">
+  This function does not return a value.
+</ParamField>
+
+**Features:**
+- Public post type without archive
+- Supports: title, thumbnail, editor
+- Menu icon: dashicons-hammer
+- URL slug: `servicios`
+- Multiple metaboxes for multimedia and countries
+
+```php
+// Automatically registered on init hook
+add_action('init', 'vertisub_create_servicios_post_type');
+
+// Get service multimedia
+$service_id = 101;
+$images = get_post_meta($service_id, '_imagenes_reseña', true);
+$videos = get_post_meta($service_id, '_videos_reseña', true);
+$video_urls = get_post_meta($service_id, '_video_urls_reseña', true);
+$countries = get_post_meta($service_id, '_servicio_paises', true);
+```
+
+### vertisub_register_servicios_meta_boxes()
+
+Registers multimedia and countries metaboxes for services.
+
+**Location:** `inc/cpts/services.php:39`
+
+<ParamField path="return" type="void">
+  Adds metaboxes to the servicios post type edit screen.
+</ParamField>
+
+### vertisub_servicios_multimedia_callback()
+
+Renders the multimedia metabox for images and videos.
+
+**Location:** `inc/cpts/services.php:62`
+
+<ParamField path="post" type="WP_Post">
+  The post object being edited.
+</ParamField>
+
+**Meta Fields:**
+- `_imagenes_reseña[]` - Array of image URLs
+- `_videos_reseña[]` - Array of video file URLs
+- `_video_urls_reseña[]` - Array of external video URLs (YouTube/Vimeo)
+
+### vertisub_servicios_paises_callback()
+
+Renders the countries metabox for service availability.
+
+**Location:** `inc/cpts/services.php:216`
+
+<ParamField path="post" type="WP_Post">
+  The post object being edited.
+</ParamField>
+
+**Meta Fields:**
+- `_servicio_paises[]` - Array of country post IDs
+
+### vertisub_save_multimedia_meta()
+
+Saves multimedia metabox data.
+
+**Location:** `inc/cpts/services.php:197`
+
+<ParamField path="post_id" type="int" required>
+  The ID of the post being saved.
+</ParamField>
+
+<ParamField path="return" type="void">
+  Saves multimedia meta data to the database.
+</ParamField>
+
+### vertisub_save_servicios_meta()
+
+Saves service countries metabox data.
+
+**Location:** `inc/cpts/services.php:236`
+
+<ParamField path="post_id" type="int" required>
+  The ID of the post being saved.
+</ParamField>
+
+<ParamField path="return" type="void">
+  Saves country associations to the database.
+</ParamField>
+
+### vertisub_add_query_vars()
+
+Adds custom query variable for country-based service filtering.
+
+**Location:** `inc/cpts/services.php:252`
+
+<ParamField path="vars" type="array" required>
+  Array of existing query variables.
+</ParamField>
+
+<ParamField path="return" type="array">
+  Array with pais_slug query variable added.
+</ParamField>
+
+```php
+// Query services by country
+$country_slug = 'ESP';
+$url = site_url('servicios-vertisub/' . $country_slug);
+```
+
+### vertisub_rewrite_rules()
+
+Adds rewrite rule for country-specific service pages.
+
+**Location:** `inc/cpts/services.php:259`
+
+<ParamField path="return" type="void">
+  Adds rewrite rule for URL pattern: servicios-vertisub/{country_slug}
+</ParamField>
+
+```php
+// URL pattern enabled:
+// /servicios-vertisub/ESP/
+// /servicios-vertisub/COL/
+// /servicios-vertisub/MEX/
+```

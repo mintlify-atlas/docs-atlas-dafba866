@@ -1,0 +1,598 @@
+---
+title: 'Header & Footer'
+description: 'Theme header and footer structure and functionality'
+icon: 'rectangle-wide'
+---
+
+## Overview
+
+The VertiSub theme's header and footer files provide consistent navigation and branding across all pages. Both files integrate with WordPress menus, custom walkers, and ACF fields.
+
+## Header (`header.php`)
+
+### File Location
+`wp-content/themes/vertisubtheme/header.php`
+
+### Structure Overview
+
+```php
+<!DOCTYPE html>
+<html <?php language_attributes(); ?>>
+<head>
+    <meta charset="<?php bloginfo('charset'); ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php bloginfo('name'); ?> - <?php bloginfo('description'); ?></title>
+    <link rel="stylesheet" href="<?php echo get_template_directory_uri(); ?>/style.css">
+    <?php wp_head(); ?>
+</head>
+<body <?php body_class(); ?>>
+    <!-- Navigation -->
+    <!-- Offcanvas Menu -->
+    <!-- Overlay -->
+```
+
+### Navigation Bar
+
+#### Desktop Navigation
+
+<Info>
+The navigation bar uses a custom walker for desktop menus with dropdown support.
+</Info>
+
+```php
+<nav id="navbar" class="navbar-modern">
+    <div class="nav-container">
+        <!-- Logo -->
+        <div class="nav-logo">
+            <a href="<?php echo esc_url(home_url('/')); ?>" class="logo-text">
+                <?php
+                if (function_exists('the_custom_logo') && has_custom_logo()) {
+                    $custom_logo_id = get_theme_mod('custom_logo');
+                    $logo = wp_get_attachment_image_src($custom_logo_id, 'full');
+                    echo '<img src="' . esc_url($logo[0]) . '" 
+                          alt="' . get_bloginfo('name') . '" 
+                          style="width:130px; height:auto;">';
+                } else {
+                    bloginfo('name');
+                }
+                ?>
+            </a>
+        </div>
+        
+        <!-- Desktop Menu -->
+        <?php
+        wp_nav_menu(array(
+            'theme_location' => 'primary_menu',
+            'container'      => false,
+            'menu_class'     => 'nav-links',
+            'walker'         => new Vertisub_Walker_Desktop(),
+            'fallback_cb'    => false
+        ));
+        ?>
+        
+        <!-- Hamburger Toggle -->
+        <div class="nav-hamburger" id="hamburger">
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+        </div>
+    </div>
+</nav>
+```
+
+#### Logo Handling
+
+**Custom Logo:**
+```php
+if (function_exists('the_custom_logo') && has_custom_logo()) {
+    $custom_logo_id = get_theme_mod('custom_logo');
+    $logo = wp_get_attachment_image_src($custom_logo_id, 'full');
+    echo '<img src="' . esc_url($logo[0]) . '" alt="' . get_bloginfo('name') . '">';
+} else {
+    // Fallback to site name
+    bloginfo('name');
+}
+```
+
+**Customization:**
+Set custom logo in WordPress admin:
+1. Appearance → Customize
+2. Site Identity → Logo
+3. Upload image (recommended: 260x auto pixels)
+
+### Offcanvas Mobile Menu
+
+<Info>
+Slide-in navigation panel for mobile devices with custom walker for hierarchical menus.
+</Info>
+
+```php
+<div id="offcanvas" class="offcanvas-menu">
+    <div class="offcanvas-content">
+        <!-- Header with logo and close button -->
+        <div class="offcanvas-header">
+            <span class="offcanvas-logo">VERTISUB</span>
+            <button class="offcanvas-close" id="closeOffcanvas">
+                <span class="close-line"></span>
+                <span class="close-line"></span>
+            </button>
+        </div>
+        
+        <!-- Navigation menu -->
+        <div class="offcanvas-body">
+            <nav class="offcanvas-nav">
+                <?php
+                wp_nav_menu(array(
+                    'theme_location' => 'primary_menu',
+                    'container'      => false,
+                    'menu_class'     => 'nav-list',
+                    'walker'         => new Vertisub_Walker_Offcanvas(),
+                    'fallback_cb'    => false
+                ));
+                ?>
+            </nav>
+            
+            <!-- Social links -->
+            <div class="offcanvas-footer">
+                <div class="social-links">
+                    <?php
+                    $redes = new WP_Query(array(
+                        'post_type'      => 'redes_sociales',
+                        'posts_per_page' => -1,
+                        'orderby'        => 'date',
+                        'order'          => 'ASC'
+                    ));
+                    
+                    if ($redes->have_posts()) :
+                        while ($redes->have_posts()) : $redes->the_post();
+                            $url = get_post_meta(get_the_ID(), '_social_url', true);
+                    ?>
+                        <a href="<?php echo esc_url($url); ?>" 
+                           class="social-link" 
+                           target="_blank" 
+                           rel="noopener">
+                            <?php the_title(); ?>
+                        </a>
+                    <?php
+                        endwhile;
+                        wp_reset_postdata();
+                    endif;
+                    ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay for closing menu -->
+<div id="overlay" class="offcanvas-overlay"></div>
+```
+
+### Menu Walkers
+
+#### Desktop Walker: `Vertisub_Walker_Desktop`
+
+<Tip>
+Custom menu walker that adds dropdown functionality and styling classes for desktop navigation.
+</Tip>
+
+**Key Features:**
+- Adds `.has-dropdown` class to menu items with children
+- Wraps submenus in dropdown containers
+- Supports multi-level navigation
+
+**Registration in `inc/menu.php`:**
+```php
+class Vertisub_Walker_Desktop extends Walker_Nav_Menu {
+    // Custom walker implementation
+}
+```
+
+#### Offcanvas Walker: `Vertisub_Walker_Offcanvas`
+
+**Key Features:**
+- Accordion-style submenus for mobile
+- Touch-friendly spacing
+- Hierarchical menu support
+
+### Navigation JavaScript
+
+```javascript
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdowns = document.querySelectorAll('.has-dropdown');
+    const hamburger = document.getElementById('hamburger');
+    const offcanvas = document.getElementById('offcanvas');
+    const overlay = document.getElementById('overlay');
+    const closeOffcanvasBtn = document.getElementById('closeOffcanvas');
+    
+    // Close offcanvas menu
+    function closeOffcanvasMenu() {
+        if (hamburger) hamburger.classList.remove('active');
+        if (offcanvas) offcanvas.classList.remove('active');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        dropdowns.forEach(d => d.classList.remove('active'));
+    }
+    
+    // Toggle dropdown menus
+    dropdowns.forEach(dropdown => {
+        dropdown.addEventListener('click', function(e) {
+            const clickedAnchor = e.target.closest('a');
+            const topAnchor = dropdown.querySelector(':scope > a');
+            
+            // Allow navigation on submenu links
+            if (clickedAnchor && topAnchor && clickedAnchor !== topAnchor) {
+                if (offcanvas && offcanvas.classList.contains('active')) {
+                    closeOffcanvasMenu();
+                }
+                return;
+            }
+            
+            // Toggle dropdown
+            e.preventDefault();
+            e.stopPropagation();
+            dropdowns.forEach(d => d.classList.remove('active'));
+            dropdown.classList.add('active');
+        });
+    });
+    
+    // Close dropdowns on outside click
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.has-dropdown')) {
+            dropdowns.forEach(d => d.classList.remove('active'));
+        }
+    });
+    
+    // Event listeners
+    if (closeOffcanvasBtn) closeOffcanvasBtn.addEventListener('click', closeOffcanvasMenu);
+    if (overlay) overlay.addEventListener('click', closeOffcanvasMenu);
+});
+```
+
+---
+
+## Footer (`footer.php`)
+
+### File Location
+`wp-content/themes/vertisubtheme/footer.php`
+
+### Structure Overview
+
+```html
+<footer class="footer-section">
+    <div class="footer-decorative-element"></div>
+    <div class="footer-container">
+        <div class="footer-main">
+            <!-- Logo and Company Info -->
+            <!-- Footer Links -->
+            <!-- Contact Info -->
+            <!-- Legal Links -->
+        </div>
+        <div class="footer-bottom">
+            <!-- Copyright -->
+        </div>
+    </div>
+</footer>
+<?php wp_footer(); ?>
+```
+
+### Footer Sections
+
+#### 1. Logo and Company Information
+
+<Info>
+Displays company logo, description, and social media links from ACF options.
+</Info>
+
+```php
+<div class="footer-logo-section">
+    <div class="footer-logo">
+        <?php
+        $logo = vertisub_get_acf_field('logo_footer', true);
+        if ($logo) :
+        ?>
+            <img width="120px" 
+                 src="<?= esc_url($logo); ?>" 
+                 alt="<?= get_bloginfo('name'); ?>'">
+        <?php endif; ?>
+    </div>
+    
+    <p class="footer-company-desc mt-4">
+        <?= vertisub_get_acf_field('descripcion', true); ?>
+    </p>
+    
+    <!-- Social Media Links -->
+    <?php if (vertisub_get_acf_field('redes_sociales', true)) : ?>
+        <div class="footer-social-links">
+            <?php
+            $social_media = vertisub_get_acf_field('redes_sociales', true);
+            foreach ($social_media as $social) :
+                $url = $social['url'] ?? '';
+                $icon_id = $social['icono'] ?? '';
+                $icon = $icon_id ? wp_get_attachment_image($icon_id, 'thumbnail') : '';
+            ?>
+                <a href="<?php echo esc_url($url); ?>" 
+                   target="_blank" 
+                   class="footer-social-link" 
+                   aria-label="<?php the_title(); ?>">
+                    <?= $icon; ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</div>
+```
+
+**ACF Fields Used:**
+- `logo_footer` (Options) - Footer logo image
+- `descripcion` (Options) - Company description
+- `redes_sociales` (Options) - Repeater field with:
+  - `url` - Social media URL
+  - `icono` - Icon image
+
+#### 2. Footer Navigation Links
+
+```php
+<div class="footer-links-section">
+    <?php if (vertisub_get_acf_field('links_de_interes', true)) : ?>
+        <h3 class="footer-section-title">
+            <?= vertisub_get_acf_field('links_de_interes', true)['titulo']; ?>
+        </h3>
+    <?php endif; ?>
+    
+    <?php
+    wp_nav_menu(array(
+        'theme_location' => 'footer_menu',
+        'container'      => false,
+        'menu_class'     => 'footer-links-list',
+        'fallback_cb'    => false
+    ));
+    ?>
+</div>
+```
+
+**Menu Registration:**
+
+In `functions.php` or `inc/menu.php`:
+```php
+register_nav_menus(array(
+    'primary_menu' => __('Primary Menu', 'vertisubtheme'),
+    'footer_menu'  => __('Footer Menu', 'vertisubtheme'),
+    'footer_legal' => __('Footer Legal', 'vertisubtheme')
+));
+```
+
+#### 3. Contact Information
+
+<Info>
+Dynamic contact section using ACF repeater fields with icons.
+</Info>
+
+```php
+<div class="footer-links-section">
+    <?php $contact_info = vertisub_get_acf_field('contacto', true); ?>
+    
+    <?php if ($contact_info['titulo']) : ?>
+        <h3 class="footer-section-title"><?= $contact_info['titulo']; ?></h3>
+    <?php endif; ?>
+    
+    <!-- Location -->
+    <?php if ($contact_info['ubicacion']) : ?>
+        <div class="footer-contact-item">
+            <svg class="footer-contact-icon" viewBox="0 0 24 24">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+            </svg>
+            <span class="footer-contact-text"><?= $contact_info['ubicacion']; ?></span>
+        </div>
+    <?php endif; ?>
+    
+    <!-- Phone -->
+    <?php if ($contact_info['telefono']) : ?>
+        <div class="footer-contact-item">
+            <svg class="footer-contact-icon" viewBox="0 0 24 24">
+                <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+            </svg>
+            <span class="footer-contact-text"><?= $contact_info['telefono']; ?></span>
+        </div>
+    <?php endif; ?>
+    
+    <!-- Email -->
+    <?php if ($contact_info['email']) : ?>
+        <div class="footer-contact-item">
+            <svg class="footer-contact-icon" viewBox="0 0 24 24">
+                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+            </svg>
+            <span class="footer-contact-text"><?= $contact_info['email']; ?></span>
+        </div>
+    <?php endif; ?>
+    
+    <!-- Countries -->
+    <?php if ($contact_info['paises']) : ?>
+        <div class="footer-contact-item">
+            <svg class="footer-contact-icon" viewBox="0 0 24 24">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+            </svg>
+            <span class="footer-contact-text"><?= $contact_info['paises']; ?></span>
+        </div>
+    <?php endif; ?>
+</div>
+```
+
+**Contact ACF Fields:**
+- `contacto` (Options) - Group field containing:
+  - `titulo` - Section title
+  - `ubicacion` - Office location
+  - `telefono` - Phone number
+  - `email` - Email address
+  - `paises` - Countries of operation
+
+#### 4. Legal Links Section
+
+```php
+<div class="footer-links-section">
+    <?php if (vertisub_get_acf_field('legal', true)) : ?>
+        <h3 class="footer-section-title">
+            <?= vertisub_get_acf_field('legal', true)['titulo']; ?>
+        </h3>
+    <?php endif; ?>
+    
+    <?php
+    wp_nav_menu(array(
+        'theme_location' => 'footer_legal',
+        'container'      => false,
+        'menu_class'     => 'footer-links-list',
+        'fallback_cb'    => false,
+        'depth'          => 1
+    ));
+    ?>
+</div>
+```
+
+#### 5. Copyright Section
+
+```php
+<?php if (vertisub_get_acf_field('derechos_de_autor', true)) : ?>
+    <div class="footer-bottom">
+        <div class="footer-bottom-content">
+            <p class="footer-copyright">
+                <?= vertisub_get_acf_field('derechos_de_autor', true); ?>
+            </p>
+        </div>
+    </div>
+<?php endif; ?>
+```
+
+---
+
+## Menu Management
+
+### Registering Menus
+
+**File:** `inc/menu.php` or `functions.php`
+
+```php
+function vertisubtheme_register_menus() {
+    register_nav_menus(array(
+        'primary_menu' => __('Primary Menu', 'vertisubtheme'),
+        'footer_menu'  => __('Footer Menu', 'vertisubtheme'),
+        'footer_legal' => __('Footer Legal Menu', 'vertisubtheme')
+    ));
+}
+add_action('after_setup_theme', 'vertisubtheme_register_menus');
+```
+
+### Assigning Menus
+
+1. **WordPress Admin:**
+   - Appearance → Menus
+   - Create or select menu
+   - Assign to theme location
+
+2. **Programmatically:**
+```php
+$menu_id = wp_create_nav_menu('Main Menu');
+wp_update_nav_menu_item($menu_id, 0, array(
+    'menu-item-title' => 'Home',
+    'menu-item-url' => home_url('/'),
+    'menu-item-status' => 'publish'
+));
+
+$locations = get_theme_mod('nav_menu_locations');
+$locations['primary_menu'] = $menu_id;
+set_theme_mod('nav_menu_locations', $locations);
+```
+
+---
+
+## Customization
+
+### Custom Logo Support
+
+**Enable in `functions.php`:**
+```php
+add_theme_support('custom-logo', array(
+    'height'      => 100,
+    'width'       => 260,
+    'flex-height' => true,
+    'flex-width'  => true
+));
+```
+
+### Social Media Integration
+
+**Custom Post Type Registration:**
+```php
+register_post_type('redes_sociales', array(
+    'labels' => array(
+        'name' => 'Redes Sociales',
+        'singular_name' => 'Red Social'
+    ),
+    'public' => false,
+    'show_ui' => true,
+    'supports' => array('title'),
+    'menu_icon' => 'dashicons-share'
+));
+```
+
+**Meta Fields:**
+- `_social_url` - Social media profile URL
+
+---
+
+## Best Practices
+
+<Warning>
+**Always escape output:**
+```php
+// Good
+echo esc_url($url);
+echo esc_html($text);
+echo esc_attr($attribute);
+
+// Bad
+echo $url;
+echo $text;
+```
+</Warning>
+
+<Tip>
+**Menu fallbacks:**
+```php
+wp_nav_menu(array(
+    'theme_location' => 'primary_menu',
+    'fallback_cb' => function() {
+        echo '<p>Please assign a menu to Primary Menu location.</p>';
+    }
+));
+```
+</Tip>
+
+### Performance Tips
+
+1. **Cache ACF options:**
+```php
+$footer_data = wp_cache_get('footer_acf_data');
+if (false === $footer_data) {
+    $footer_data = vertisub_get_acf_field('contacto', true);
+    wp_cache_set('footer_acf_data', $footer_data, '', 3600);
+}
+```
+
+2. **Minimize queries:**
+```php
+// Use options page instead of posts for global data
+$social = vertisub_get_acf_field('redes_sociales', true);
+```
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Page Templates" icon="file-code" href="/api/page-templates">
+    Available page templates
+  </Card>
+  <Card title="Menu Walker" icon="bars" href="/api/menu-walker">
+    Custom menu walker class
+  </Card>
+</CardGroup>
